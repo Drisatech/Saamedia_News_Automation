@@ -1,8 +1,8 @@
 # NewsTools.py
 import sqlite3
 import requests
-from wordpress_xmlrpc import Client, WordPressPost
-from wordpress_xmlrpc.methods.posts import NewPost
+from python-wordpress-xmlrpc import Client, WordPressPost
+from python-wordpress_xmlrpc.methods.posts import NewPost
 
 # WordPress setup
 wp_url = "https://saamedia.info/xmlrpc.php"
