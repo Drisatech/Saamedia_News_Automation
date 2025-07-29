@@ -1,0 +1,68 @@
+<!-- dashboard.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SaaMedia News Dashboard</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #0077b6;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f1f1f1;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 15px;
+            color: gray;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h2>SaaMedia News Automation Dashboard</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Source</th>
+                <th>Published</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for article in articles %}
+            <tr>
+                <td>{{ article.title }}</td>
+                <td>{{ article.category }}</td>
+                <td><a href="{{ article.source }}" target="_blank">View Source</a></td>
+                <td>{{ article.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        &copy; 2025 SaaMedia News AI System – Powered by CrewAI + OpenAI
+    </div>
+</body>
+</html>
