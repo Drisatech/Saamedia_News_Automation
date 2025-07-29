@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+openai
+crewai
+langchain
+apscheduler
+beautifulsoup4
+requests
+wordpress-xmlrpc
+sqlite3
