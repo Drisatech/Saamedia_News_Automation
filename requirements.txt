@@ -1,11 +1,12 @@
+git+https://github.com/embedchain/embedchain.git@v0.1.128
+crewai_tools==0.58.0
+fastapi==0.116.1
+uvicorn
 APScheduler==3.11.0
 beautifulsoup4==4.13.4
 crewai==0.150.0
-crewai_tools==0.58.0
-fastapi==0.116.1
 Jinja2==3.1.6
 langchain_openai==0.3.28
 python-dotenv==1.1.1
 python_wordpress_xmlrpc==2.3
 Requests==2.32.4
-uvicorn
