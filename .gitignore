@@ -1,0 +1,41 @@
+# Ignore virtual environments
+my_venv/
+venv/
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VSCode settings
+.vscode/
+
+# Environment and config files
+.env
+*.env
+
+# MacOS/Linux system files
+.DS_Store
+
+# Logs
+*.log
+
+# Ignore Pipenv files if unused
+Pipfile.lock
+
+# Ignore coverage and test results
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Ignore model/data outputs
+*.sqlite
+*.db
+*.h5
+*.pkl
+*.csv
+*.json
