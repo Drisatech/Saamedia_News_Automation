@@ -39,3 +39,4 @@ htmlcov/
 *.pkl
 *.csv
 *.json
+requirements-dev.txt
