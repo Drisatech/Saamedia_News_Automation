@@ -1,8 +1,8 @@
-# NewsAgent.py
+
 from crewai import Crew
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from NewsTasks import categorize_task, summarize_task
-from crewai.agents import Agent
+from crewai import Agent
 from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
 
 # CrewAI Agents

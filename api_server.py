@@ -1,4 +1,4 @@
-# api_server.py
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from NewsAgent import process_article
@@ -6,6 +6,13 @@ from NewsTools import init_db
 import sqlite3
 
 app = FastAPI()
+
+async def lifespan(app: FastAPI):
+    # startup logic here
+    yield
+    # shutdown logic (optional)
+
+app = FastAPI(lifespan=lifespan)
 
 @app.on_event("startup")
 def startup_event():

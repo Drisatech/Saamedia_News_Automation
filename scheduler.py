@@ -1,4 +1,3 @@
-# scheduler.py
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from NewsCrew import scrape_and_process
