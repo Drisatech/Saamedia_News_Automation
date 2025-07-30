@@ -1,5 +1,7 @@
+# config.py
+
 # 🔐 OpenAI Key
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "sk-your-key-here"
 
 # 🌐 WordPress XML-RPC Settings
 WORDPRESS_XMLRPC = "https://saamedia.info/xmlrpc.php"
