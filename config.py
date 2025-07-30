@@ -1,5 +1,9 @@
 # config.py
 
+import os
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
 # 🔐 OpenAI Key
 OPENAI_API_KEY = "sk-your-key-here"
 
