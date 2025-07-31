@@ -12,12 +12,6 @@ async def lifespan(app: FastAPI):
     yield
     # shutdown logic (optional)
 
-app = FastAPI(lifespan=lifespan)
-
-@app.on_event("startup")
-def startup_event():
-    init_db()
-
 @app.get("/")
 def read_root():
     return {"status": "SaaMedia NewsBot is running."}
