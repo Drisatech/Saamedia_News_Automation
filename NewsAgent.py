@@ -52,7 +52,8 @@ def process_article(title, content, link):
         result = crew.kickoff(inputs={"content": content, "title": title})
 
         if not isinstance(result, dict) or not result:
-            return False, "Agent returned invalid output"
+            print("⚠️ Agent returned empty or non-dict result:", result)
+            return False, "Agent output error"
 
         summary = result.get("summary")
         category = result.get("category", "The Nation")
@@ -69,9 +70,10 @@ def process_article(title, content, link):
 
     except litellm.RateLimitError as e:
         print("❌ LiteLLM rate limit hit:", str(e))
-        return False, "Rate limit hit: OpenRouter quota exceeded"
+        return False, f"Rate limit hit: {str(e)}"
 
     except Exception as e:
-        print("❌ General error occurred:", str(e))
+        import traceback
+        print("❌ General error:", str(e))
         traceback.print_exc()
-        return False, f"Error processing article: {str(e)}"
+        return False, f"❌ Error processing article: {str(e)}"
