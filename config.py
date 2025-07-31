@@ -2,10 +2,10 @@
 
 import os
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = os.getenv("OPENROUTERAI_API_KEY")
 
-# 🔐 OpenAI Key
-OPENAI_API_KEY = "sk-your-key-here"
+# 🔐 OpenrouterAI Key
+OPENROUTERAI_API_KEY = "sk-your-key-here"
 
 # 🌐 WordPress XML-RPC Settings
 WORDPRESS_XMLRPC = "https://saamedia.info/xmlrpc.php"
