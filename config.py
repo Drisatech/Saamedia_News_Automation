@@ -14,7 +14,7 @@ WP_PASSWORD = "OQFk WB6F WyVq 6Klo v3rp XIvd"
 
 # 📞 WhatsApp Alert Config via CallMeBot
 WHATSAPP_API = "https://api.callmebot.com/whatsapp.php?phone=2348121044557&text=This+is+a+test&apikey=2254657"
-WHATSAPP_PHONE = "+2348121044557"  # Your verified phone number with CallMeBot
+WHATSAPP_PHONE = "+2348121044557"
 
 # 📁 News Categories
 CATEGORIES = [

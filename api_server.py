@@ -55,23 +55,6 @@ async def dashboard(request: Request):
     ]
     return templates.TemplateResponse("dashboard.html", {"request": request, "articles": articles})
 
-    # Render using Jinja2 template
-    try:
-        template = env.get_template("dashboard.html")
-        return HTMLResponse(content=template.render(articles=articles))
-    except:
-        # Fallback if template is missing
-        html = """
-        <html><body>
-        <h3>Recent News Articles</h3>
-        <table border="1">
-        <tr><th>Title</th><th>Category</th><th>URL</th><th>Created At</th></tr>
-        """
-        for article in articles:
-            html += f"<tr><td>{article['title']}</td><td>{article['category']}</td><td><a href='{article['source']}' target='_blank'>Link</a></td><td>{article['created_at']}</td></tr>"
-        html += "</table></body></html>"
-        return HTMLResponse(content=html)
-
 @app.get("/endpoints")
 def show_endpoints():
     return {
