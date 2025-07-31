@@ -1,11 +1,7 @@
-# config.py
-
 import os
 
-openrouterai_api_key = os.getenv("OPENROUTERAI_API_KEY")
-
-# 🔐 OpenrouterAI Key
-OPENROUTERAI_API_KEY = "sk-your-key-here"
+# 🔐 OpenRouterAI Key
+OPENROUTERAI_API_KEY = os.getenv("OPENROUTERAI_API_KEY", "sk-your-openrouter-key")
 
 # 🌐 WordPress XML-RPC Settings
 WORDPRESS_XMLRPC = "https://saamedia.info/xmlrpc.php"
@@ -24,17 +20,17 @@ CATEGORIES = [
     "Corruption",
     "Crime & Security",
     "Sports",
-    "Entertainment"
-    "Kogi News"
+    "Entertainment",
+    "Kogi News",
     "Featured"
-    ]
+]
 
 # 📅 Scheduler Settings
 SCRAPE_INTERVAL_MINUTES = 30
 
 # 🧠 AI Settings
-LLM_MODEL_NAME = "gpt-3.5-turbo"  # or gpt-4
-TEMPERATURE = 0.5
+LLM_MODEL_NAME = "openrouter/openai/gpt-3.5-turbo"  # <- openrouter format
+TEMPERATURE = 0.3
 
 # 🗂️ SQLite DB Name
 DATABASE_FILE = "news_history.db"
