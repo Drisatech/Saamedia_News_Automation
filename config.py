@@ -2,7 +2,7 @@
 
 import os
 
-openai_api_key = os.getenv("OPENROUTERAI_API_KEY")
+openrouterai_api_key = os.getenv("OPENROUTERAI_API_KEY")
 
 # 🔐 OpenrouterAI Key
 OPENROUTERAI_API_KEY = "sk-your-key-here"
