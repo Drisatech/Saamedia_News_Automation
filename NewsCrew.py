@@ -1,5 +1,5 @@
 import logging
-from NewsAgents import process_article
+from NewsAgent import process_article
 from NewsTasks import scrape_latest_article
 
 # Setup logging
