@@ -1,7 +1,7 @@
 #api_server.py
 
 from flask import Flask, jsonify
-from NewsAgents import process_article
+from NewsAgent import process_article
 from NewsCrew import fetch_latest_articles
 
 import traceback
