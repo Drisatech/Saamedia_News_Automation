@@ -11,3 +11,5 @@ python-dotenv
 python_wordpress_xmlrpc
 Requests
 litellm
+flask
+Jsonify
