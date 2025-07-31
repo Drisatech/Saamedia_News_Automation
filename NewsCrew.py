@@ -1,16 +1,40 @@
-from crewai import Agent
-from NewsTools import categorize_tool, summarize_tool
+import logging
+from NewsAgents import process_article
+from NewsTasks import scrape_latest_article
 
-news_categorizer = Agent(
-    role="News Categorizer",
-    goal="Categorize Nigerian news articles accurately by topic",
-    backstory="An expert media analyst trained in Nigerian current affairs and journalism.",
-    tools=[categorize_tool]
+# Setup logging
+logging.basicConfig(
+    filename='newscrew.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-news_summarizer = Agent(
-    role="News Summarizer",
-    goal="Write clear and engaging summaries of Nigerian news articles for publication.",
-    backstory="A concise writer experienced in summarizing news content for blogs and media outlets.",
-    tools=[summarize_tool]
-)
+def run_news_pipeline():
+    """
+    Orchestrates the scraping and processing of the latest news article.
+    Returns:
+        (bool, str): success flag and URL or error message.
+    """
+    try:
+        logging.info("🔍 Scraping latest article...")
+        article = scrape_latest_article()
+
+        if not article:
+            logging.warning("⚠️ No new article found.")
+            return False, "No article scraped"
+
+        title, content, link = article["title"], article["content"], article["link"]
+        logging.info(f"📰 Article fetched: {title}")
+
+        success, result = process_article(title, content, link)
+
+        if success:
+            logging.info(f"✅ Article published successfully: {result}")
+        else:
+            logging.error(f"❌ Article processing failed: {result}")
+
+        return success, result
+
+    except Exception as e:
+        logging.exception("💥 Unexpected error during news pipeline execution")
+        return False, str(e)

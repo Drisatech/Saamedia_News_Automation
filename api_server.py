@@ -1,68 +1,63 @@
-from fastapi import FastAPI, Request
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from jinja2 import Environment, FileSystemLoader
-from NewsAgent import process_article
-from NewsTools import init_db
-import sqlite3
-import os
+#api_server.py
 
-# --- App Setup ---
-app = FastAPI()
+from flask import Flask, jsonify
+from NewsAgents import process_article
+from NewsCrew import fetch_latest_articles
 
-# --- Jinja2 Template Setup ---
-TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
-env = Environment(loader=FileSystemLoader(TEMPLATES_DIR))
+import traceback
 
-# --- FastAPI Routes ---
+app = Flask(__name__)
 
-@app.get("/")
-def read_root():
-    return {"status": "✅ SaaMedia NewsBot is running."}
+@app.route("/", methods=["GET"])
+def index():
+    return jsonify({"message": "🚀 SaaMedia News Automation API is running"})
 
-@app.get("/run-news")
+@app.route("/run-news", methods=["GET"])
 def run_news():
-    # Dummy article for test
-    title = "Nigeria GDP rises 3.5% in Q2 2025"
-    content = "The National Bureau of Statistics has reported..."
-    link = "https://example.com/gdp-news"
+    try:
+        articles = fetch_latest_articles()
 
-    success, url = process_article(title, content, link)
-    return {
-        "success": success,
-        "url": url if success else "❌ Error processing article"
-    }
+        if not articles:
+            return jsonify({"success": False, "url": "❌ No new articles found"})
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+        total = len(articles)
+        success_count = 0
+        failures = []
 
-@app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    conn = sqlite3.connect("articles_log.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT title, category, url, created_at FROM articles ORDER BY created_at DESC")
-    rows = cursor.fetchall()
-    conn.close()
+        for article in articles:
+            title = article.get("title")
+            content = article.get("content")
+            link = article.get("link")
 
-    articles = [
-        {
-            "title": row[0],
-            "category": row[1],
-            "source": row[2],
-            "created_at": row[3]
-        }
-        for row in rows
-    ]
-    return templates.TemplateResponse("dashboard.html", {"request": request, "articles": articles})
+            success, result = process_article(title, content, link)
 
-@app.get("/endpoints")
-def show_endpoints():
-    return {
-        "endpoints": {
-            "/": "Check status",
-            "/run-news": "Trigger dummy news post",
-            "/dashboard": "HTML table of last 50 articles",
-            "/endpoints": "This help listing"
-        }
-    }
+            if success:
+                success_count += 1
+            else:
+                failures.append({
+                    "title": title,
+                    "error": result
+                })
 
+        if success_count == total:
+            return jsonify({"success": True, "url": f"✅ All {total} articles processed successfully!"})
+        elif success_count > 0:
+            return jsonify({
+                "success": True,
+                "url": f"⚠️ {success_count}/{total} articles processed. Some failed.",
+                "failures": failures
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "url": "❌ All articles failed to process.",
+                "failures": failures
+            })
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "url": f"❌ Server error: {str(e)}"})
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
