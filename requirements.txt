@@ -14,3 +14,5 @@ litellm
 flask
 Jsonify
 schedule
+langchain
+langchain-community
