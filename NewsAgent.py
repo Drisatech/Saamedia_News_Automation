@@ -38,7 +38,7 @@ summarizer_agent = Agent(
 # ✅ CrewAI pipeline
 crew = Crew(
     agents=[categorizer_agent, summarizer_agent],
-    tasks=[get_categorize_task, get_summarize_task],
+    tasks=[categorize_task, summarize_task],
     verbose=True
 )
 
