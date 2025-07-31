@@ -6,7 +6,7 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from NewsTasks import categorize_task, summarize_task
+from NewsTasks import get_categorize_task, get_summarize_task
 from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
 
 llm = ChatOpenAI(
@@ -38,7 +38,7 @@ summarizer_agent = Agent(
 # ✅ CrewAI pipeline
 crew = Crew(
     agents=[categorizer_agent, summarizer_agent],
-    tasks=[categorize_task, summarize_task],
+    tasks=[get_categorize_task, get_summarize_task],
     verbose=True
 )
 
