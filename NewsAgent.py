@@ -3,7 +3,21 @@ from langchain_openai import ChatOpenAI
 from NewsTasks import categorize_task, summarize_task
 from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
 
-# Initialize the language model
+import traceback
+
+#If using OpenAI directly
+try:
+    import openai
+except ImportError:
+    openai = None
+
+#If using LiteLLM
+try:
+    import litellm
+except ImportError:
+    litellm = None
+
+#Initialize the language model
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 
 # Define agents
@@ -59,5 +73,15 @@ def process_article(title, content, link):
 
         return True, url
 
+    except (openai.error.RateLimitError if openai else Exception) as e:
+        print("❌ OpenAI rate limit hit:", str(e))
+        return False, "Rate limit hit: OpenAI quota exceeded"
+
+    except (litellm.RateLimitError if litellm else Exception) as e:
+        print("❌ LiteLLM rate limit hit:", str(e))
+        return False, "Rate limit hit: LiteLLM quota exceeded"
+
     except Exception as e:
-        return False, str(e)
+        print("❌ General error occurred:", str(e))
+        traceback.print_exc()
+        return False, f"Error processing article: {str(e)}"
