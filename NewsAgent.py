@@ -1,16 +1,19 @@
 from crewai import Crew, Agent
-from langchain_community.chat_models import ChatOpenRouter
-from NewsTasks import categorize_task, summarize_task
-from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
-from config import OPENROUTERAI_API_KEY, LLM_MODEL_NAME, TEMPERATURE, CATEGORIES
-
+from config import OPENROUTERAI_API_KEY, CATEGORIES
 import traceback
 
-# ✅ Initialize OpenRouterAI model
-llm = ChatOpenRouter(
+from langchain_community.chat_models import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+
+from NewsTasks import categorize_task, summarize_task
+from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
+
+llm = ChatOpenAI(
+    base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTERAI_API_KEY,
-    model=LLM_MODEL_NAME,
-    temperature=TEMPERATURE
+    model="mistralai/mistral-7b-instruct:free",  # or "openai/gpt-3.5-turbo"
+    temperature=0.3,
 )
 
 # ✅ Define agents
