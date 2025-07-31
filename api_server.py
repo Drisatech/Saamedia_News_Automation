@@ -1,20 +1,24 @@
-
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from jinja2 import Environment, FileSystemLoader
 from NewsAgent import process_article
 from NewsTools import init_db
 import sqlite3
+import os
 
+# --- App Setup ---
 app = FastAPI()
 
-async def lifespan(app: FastAPI):
-    # startup logic here
-    yield
-    # shutdown logic (optional)
+# --- Jinja2 Template Setup ---
+TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
+env = Environment(loader=FileSystemLoader(TEMPLATES_DIR))
+
+# --- FastAPI Routes ---
 
 @app.get("/")
 def read_root():
-    return {"status": "SaaMedia NewsBot is running."}
+    return {"status": "✅ SaaMedia NewsBot is running."}
 
 @app.get("/run-news")
 def run_news():
@@ -26,62 +30,20 @@ def run_news():
     success, url = process_article(title, content, link)
     return {
         "success": success,
-        "url": url if success else "Error processing article"
+        "url": url if success else "❌ Error processing article"
     }
 
-@app.get("/dashboard")
-def dashboard():
-    return {
-        "message": "Welcome to SaaMedia NewsBot Dashboard",
-        "endpoints": {
-            "/": "Status check",
-            "/run-news": "Trigger news sourcing + publishing",
-            "/monitor": "View posted articles in HTML"
-        }
-    }
-
-@app.get("/monitor", response_class=HTMLResponse)
-def monitor():
-    conn = sqlite3.connect("articles_log.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT title, category, url, created_at FROM articles ORDER BY created_at DESC LIMIT 20")
-    rows = cursor.fetchall()
-    conn.close()
-
-    html = """
-    <html>
-    <head><title>NewsBot Dashboard</title></head>
-    <body style="font-family:sans-serif">
-    <h2>SaaMedia NewsBot Monitor</h2>
-    <table border='1' cellpadding='8' cellspacing='0'>
-    <tr><th>Title</th><th>Category</th><th>URL</th><th>Created At</th></tr>
-    """
-
-    for title, cat, url, time in rows:
-        html += f"<tr><td>{title}</td><td>{cat}</td><td><a href='{url}' target='_blank'>Link</a></td><td>{time}</td></tr>"
-
-    html += "</table></body></html>"
-    return html
-
-from fastapi.responses import HTMLResponse
-from jinja2 import Environment, FileSystemLoader
-import sqlite3
-import os
-
-# Setup Jinja2 environment
-TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
-env = Environment(loader=FileSystemLoader(TEMPLATES_DIR))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def view_dashboard():
-    # Connect to the SQLite DB
-    conn = sqlite3.connect("news_history.db")
+async def dashboard(request: Request):
+    conn = sqlite3.connect("articles_log.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT title, category, source_url, created_at FROM news ORDER BY created_at DESC LIMIT 50")
+    cursor.execute("SELECT title, category, url, created_at FROM articles ORDER BY created_at DESC")
     rows = cursor.fetchall()
     conn.close()
 
-    # Map to dictionaries for Jinja2
     articles = [
         {
             "title": row[0],
@@ -91,9 +53,33 @@ def view_dashboard():
         }
         for row in rows
     ]
+    return templates.TemplateResponse("dashboard.html", {"request": request, "articles": articles})
 
-    # Render the HTML
-    template = env.get_template("dashboard.html")
-    html_content = template.render(articles=articles)
+    # Render using Jinja2 template
+    try:
+        template = env.get_template("dashboard.html")
+        return HTMLResponse(content=template.render(articles=articles))
+    except:
+        # Fallback if template is missing
+        html = """
+        <html><body>
+        <h3>Recent News Articles</h3>
+        <table border="1">
+        <tr><th>Title</th><th>Category</th><th>URL</th><th>Created At</th></tr>
+        """
+        for article in articles:
+            html += f"<tr><td>{article['title']}</td><td>{article['category']}</td><td><a href='{article['source']}' target='_blank'>Link</a></td><td>{article['created_at']}</td></tr>"
+        html += "</table></body></html>"
+        return HTMLResponse(content=html)
 
-    return HTMLResponse(content=html_content)
+@app.get("/endpoints")
+def show_endpoints():
+    return {
+        "endpoints": {
+            "/": "Check status",
+            "/run-news": "Trigger dummy news post",
+            "/dashboard": "HTML table of last 50 articles",
+            "/endpoints": "This help listing"
+        }
+    }
+

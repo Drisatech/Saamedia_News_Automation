@@ -1,13 +1,12 @@
-
-from crewai import Crew
+from crewai import Crew, Agent
 from langchain_openai import ChatOpenAI
 from NewsTasks import categorize_task, summarize_task
-from crewai import Agent
 from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
 
-# CrewAI Agents
+# Initialize the language model
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 
+# Define agents
 categorizer_agent = Agent(
     role="News Categorizer",
     goal="Categorize the article into one of the 7 categories",
@@ -26,33 +25,39 @@ summarizer_agent = Agent(
     llm=llm
 )
 
-# Crew Setup
+# Create a CrewAI instance
 crew = Crew(
     agents=[categorizer_agent, summarizer_agent],
     tasks=[categorize_task, summarize_task],
     verbose=True
 )
 
+# Main processing function
 def process_article(title, content, link):
-    result = crew.kickoff(inputs={"content": content, "title": title})
+    """Process article through categorization, summarization, and publishing pipeline."""
+    try:
+        result = crew.kickoff(inputs={"content": content, "title": title})
 
-    if not result or not isinstance(result, dict):
-        return False, "Invalid agent result"
+        if not isinstance(result, dict) or not result:
+            return False, "Agent returned invalid output"
 
-    summary = result.get("summary")
-    category = result.get("category", "The Nation")
+        summary = result.get("summary")
+        category = result.get("category", "The Nation")
 
-    # Publish to WordPress
-    url = publish_to_wordpress(title, summary, category)
+        # Step 1: Publish to WordPress
+        url = publish_to_wordpress(title, summary, category)
 
-    # Log to SQLite
-    log_article(title, category, url, "published")
+        # Step 2: Log article
+        log_article(title, category, url, "published")
 
-    # WhatsApp alert
-    notify_whatsapp(
-        phone_number="+2348121044557",  # Replace with your number
-        api_key="2254657",  # Replace with your key
-        message=f" New Post: {title}\nCategory: {category}\n{url}"
-    )
+        # Step 3: WhatsApp alert
+        notify_whatsapp(
+            phone_number="+2348121044557",
+            api_key="2254657",  # Ideally loaded from environment
+            message=f"📰 New Post: {title}\nCategory: {category}\n{url}"
+        )
 
-    return True, url
+        return True, url
+
+    except Exception as e:
+        return False, str(e)

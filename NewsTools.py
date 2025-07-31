@@ -114,6 +114,7 @@ def log_article(title, category, url, status):
         category (str): Article category
         url (str): Article URL
         status (str): Article status
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         
     Returns:
         bool: True if successful, False otherwise
