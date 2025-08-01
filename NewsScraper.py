@@ -9,7 +9,8 @@ sources = {
     "https://nairametrics.com": "h2.post-title a",
     "https://dailytrust.com": "div.td-module-thumb a",
     "https://businessday.ng": "h3.entry-title a",
-    "https://www.arise.tv": "h3 a"
+    "https://www.arise.tv": "h3 a",
+    "https://www.premiumtimesng.com": "h2.post-title a"
 }
 
 def scrape_and_process():
