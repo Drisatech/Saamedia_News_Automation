@@ -3,15 +3,15 @@
 import os
 import traceback
 from crewai import Crew, Agent
-from langchain_openai import ChatOpenAI
-from config import OPENROUTERAI_API_KEY, LLM_MODEL_NAME, TEMPERATURE, CATEGORIES
 from NewsTasks import get_categorize_task, get_summarize_task
 from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
+from langchain_openai import ChatOpenAI, CATEGORIES
+from config import OPENAI_API_KEY
 
 # Initialize LLM
 llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_key=OPENAI_API_KEY,
     model="mistralai/mixtral-8x7b"
 )
 

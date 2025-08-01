@@ -1,8 +1,9 @@
-import os
 from dotenv import load_dotenv
+import os
 
-# 🔐 OpenRouterAI Key
-OPENROUTERAI_API_KEY = os.getenv("OPENROUTERAI_API_KEY", "sk-your-openrouter-key")
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # 🌐 WordPress XML-RPC Settings
 WORDPRESS_XMLRPC = "https://saamedia.info/xmlrpc.php"
