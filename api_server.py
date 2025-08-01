@@ -2,7 +2,7 @@
 
 from flask import Flask, jsonify
 from NewsAgent import process_article
-from NewsCrew import fetch_latest_articles
+from NewsCrew import scrape_latest_articles
 
 import traceback
 
