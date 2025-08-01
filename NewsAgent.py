@@ -5,7 +5,7 @@ import traceback
 from crewai import Crew, Agent
 from NewsTasks import get_categorize_task, get_summarize_task
 from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
-from langchain_openai import ChatOpenAI, CATEGORIES
+from langchain_openai import ChatOpenAI
 from config import OPENAI_API_KEY
 
 # Initialize LLM
