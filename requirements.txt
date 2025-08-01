@@ -1,7 +1,6 @@
 embedchain
 crewai_tools
 fastapi
-uvicorn
 APScheduler
 beautifulsoup4
 crewai
