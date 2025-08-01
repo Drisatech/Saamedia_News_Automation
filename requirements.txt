@@ -19,3 +19,4 @@ langchain-community
 dotenv
 logging
 urljoin
+gunicorn
