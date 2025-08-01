@@ -1,23 +1,64 @@
-import xmlrpc.client
 import sqlite3
 import requests
-from config import WORDPRESS_XMLRPC, WP_USERNAME, WP_PASSWORD, WHATSAPP_PHONE, WHATSAPP_API, DATABASE_FILE
+from config import (
+    WORDPRESS_REST_URL,
+    WP_USERNAME,
+    WP_APP_PASSWORD,
+    WHATSAPP_PHONE,
+    WHATSAPP_API,
+    DATABASE_FILE
+)
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+import logging
+import base64
+
 
 def publish_to_wordpress(title, content, category):
-    """Publishes a post to WordPress using XML-RPC."""
+    """Publishes a post to WordPress using the REST API."""
     try:
-        server = xmlrpc.client.ServerProxy(WORDPRESS_XMLRPC)
-        post = {
-            'title': title,
-            'description': content,
-            'categories': [category],
-            'post_type': 'post'
+        # Prepare authentication
+        credentials = f"{WP_USERNAME}:{WP_APP_PASSWORD}"
+        token = base64.b64encode(credentials.encode())
+        headers = {
+            "Authorization": f"Basic {token.decode('utf-8')}",
+            "Content-Type": "application/json"
         }
-        post_id = server.metaWeblog.newPost('', WP_USERNAME, WP_PASSWORD, post, True)
-        return f"{WORDPRESS_XMLRPC.replace('xmlrpc.php', '')}?p={post_id}"
+
+        # Optional: fetch or create category via REST API
+        cat_resp = requests.get(f"{WORDPRESS_REST_URL}/categories?search={category}", headers=headers)
+        cat_resp.raise_for_status()
+        categories = cat_resp.json()
+
+        if categories:
+            category_id = categories[0]['id']
+        else:
+            new_cat_resp = requests.post(
+                f"{WORDPRESS_REST_URL}/categories",
+                headers=headers,
+                json={"name": category}
+            )
+            new_cat_resp.raise_for_status()
+            category_id = new_cat_resp.json()['id']
+
+        # Create post
+        post_data = {
+            "title": title,
+            "content": content,
+            "status": "publish",
+            "categories": [category_id]
+        }
+
+        post_resp = requests.post(f"{WORDPRESS_REST_URL}/posts", headers=headers, json=post_data)
+        post_resp.raise_for_status()
+        post_url = post_resp.json().get("link")
+        print(f"✅ Published: {post_url}")
+        return post_url
+
     except Exception as e:
         print(f"❌ WordPress publish error: {e}")
         return None
+
 
 def log_article(title, category, url, status):
     """Logs published article into SQLite database."""
@@ -42,6 +83,7 @@ def log_article(title, category, url, status):
     except Exception as e:
         print(f"❌ Logging error: {e}")
 
+
 def notify_whatsapp(message):
     """Sends WhatsApp alert using CallMeBot."""
     try:
@@ -55,13 +97,15 @@ def notify_whatsapp(message):
         print(f"❌ WhatsApp alert error: {e}")
 
 
-from bs4 import BeautifulSoup
+# scrape_latest_articles
+
+logging.basicConfig(
+    filename="newstools.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 def scrape_latest_articles():
-    """
-    Scrapes the latest news articles from multiple Nigerian news sources.
-    Returns a list of dictionaries with keys: 'title', 'url', 'content', 'source'
-    """
     sources = {
         "https://www.channelstv.com": "div.post-item a",
         "https://www.punchng.com": "h2.post-title a",
@@ -73,47 +117,53 @@ def scrape_latest_articles():
         "https://www.premiumtimesng.com": "h2.post-title a"
     }
 
-    scraped_articles = []
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/115.0.0.0 Safari/537.36"
+        )
+    }
 
-    for base_url, selector in sources.items():
+    articles = []
+    visited_links = set()
+
+    for source, selector in sources.items():
         try:
-            response = requests.get(base_url, timeout=10)
+            response = requests.get(source, headers=headers, timeout=10)
             response.raise_for_status()
 
-            soup = BeautifulSoup(response.content, 'html.parser')
+            soup = BeautifulSoup(response.text, 'html.parser')
             links = soup.select(selector)
 
-            for link_tag in links[:3]:  # get up to 3 articles per source
-                try:
-                    title = link_tag.text.strip()
-                    url = link_tag.get("href")
+            count = 0
+            for link_tag in links:
+                href = link_tag.get("href")
+                if not href:
+                    continue
 
-                    # Normalize relative URLs
-                    if url and url.startswith("/"):
-                        url = base_url.rstrip("/") + url
+                full_link = urljoin(source, href)
+                if full_link in visited_links:
+                    continue
 
-                    if not url or not url.startswith("http"):
-                        continue
+                visited_links.add(full_link)
+                title = link_tag.get_text(strip=True)
 
-                    article_response = requests.get(url, timeout=10)
-                    article_response.raise_for_status()
+                if title and full_link:
+                    articles.append({
+                        "title": title,
+                        "link": full_link,
+                        "content": f"Full content to be fetched from {full_link}"  # Placeholder
+                    })
+                    count += 1
 
-                    article_soup = BeautifulSoup(article_response.content, 'html.parser')
-                    paragraphs = article_soup.select('p')
-                    content = '\n'.join(p.get_text(strip=True) for p in paragraphs[:5])
+                if count >= 5:
+                    break
 
-                    if len(content) > 100:
-                        scraped_articles.append({
-                            "title": title,
-                            "url": url,
-                            "content": content,
-                            "source": base_url
-                        })
+            logging.info(f"✅ Scraped {count} articles from {source}")
 
-                except Exception as inner_e:
-                    print(f"⚠️ Error scraping article from {base_url}: {inner_e}")
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"❌ Failed to scrape {source}: {e}")
+            continue
 
-        except Exception as outer_e:
-            print(f"❌ Failed to scrape {base_url}: {outer_e}")
-
-    return scraped_articles
+    return articles

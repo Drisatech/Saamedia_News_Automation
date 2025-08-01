@@ -17,3 +17,5 @@ schedule
 langchain
 langchain-community
 dotenv
+logging
+urljoin

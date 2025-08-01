@@ -1,84 +1,67 @@
-# NewsAgent.py
 
 import os
 import traceback
-from crewai import Crew, Agent
 from NewsTasks import get_categorize_task, get_summarize_task
 from NewsTools import publish_to_wordpress, log_article, notify_whatsapp
-from langchain_openai import ChatOpenAI
 from config import OPENAI_API_KEY
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from crewai import Crew, Agent, Task
+from litellm import completion
 
-# Initialize LLM
-llm = ChatOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENAI_API_KEY,
-    model="mistralai/mixtral-8x7b"
-)
+# Configuration
+MODEL = "openrouter/openai/gpt-3.5-turbo"  # or whichever OpenRouter-compatible model you prefer
 
-# Define agents
+def generate_response(prompt):
+    try:
+        response = completion(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response['choices'][0]['message']['content']
+    except Exception as e:
+        return f"Error generating response: {str(e)}"
+
+
+# Agents
 categorizer_agent = Agent(
     role="News Categorizer",
-    goal="Classify the article into one of the defined categories",
-    backstory="Expert in Nigerian news classification",
-    verbose=True,
-    allow_delegation=False,
-    llm=llm
+    goal="Classify news articles into categories like Politics, Sports, Business, etc.",
+    backstory="An expert journalist with decades of experience in news classification.",
+    tools=[],
+    verbose=True
 )
 
 summarizer_agent = Agent(
     role="News Summarizer",
-    goal="Provide a short summary for the article",
-    backstory="Skilled in journalistic summarization",
-    verbose=True,
-    allow_delegation=False,
-    llm=llm
+    goal="Generate short summaries of news articles.",
+    backstory="A seasoned writer known for condensing complex stories into quick reads.",
+    tools=[],
+    verbose=True
 )
 
-# Prepare tasks
-categorize_task = get_categorize_task(categorizer_agent)
-summarize_task = get_summarize_task(summarizer_agent)
-
-# Initialize Crew
-try:
-    crew = Crew(
-        agents=[categorizer_agent, summarizer_agent],
-        tasks=[categorize_task, summarize_task],
-        verbose=True,
-        memory=False,
-        process="sequential"
-    )
-except Exception as e:
-    print("🚨 Crew initialization failed:", e)
-    traceback.print_exc()
-    raise
-
-def process_article(title, content, link):
+# Main Article Processor
+def process_article(title, text, url):
     try:
-        result = crew.kickoff(inputs={"title": title, "content": content})
+        print(f"\n🔍 Processing: {title}")
+        print("📂 Sending to categorizer_agent...")
+        category_prompt = f"Classify the following news headline:\n\nTitle: {title}\n\nText: {text}\n\nCategory:"
+        category = generate_response(category_prompt).strip()
 
-        if not isinstance(result, dict):
-            return False, f"Invalid agent result format: {result}"
+        print("📂 Sending to summarizer_agent...")
+        summary_prompt = f"Summarize the following article:\n\nTitle: {title}\n\nText: {text}\n\nSummary:"
+        summary = generate_response(summary_prompt).strip()
 
-        summary = result.get("summary")
-        category = result.get("category", CATEGORIES[0])
-
-        if not summary:
-            summary = "(No summary generated)"
-        if category not in CATEGORIES:
-            category = CATEGORIES[0]
-
-        # Publish
-        url = publish_to_wordpress(title, summary, category)
-        # Log
-        log_article(title, category, url, "published")
-        # Alert
-        notify_whatsapp(
-            message=f"📰 New Post: {title}\nCategory: {category}\n{url}"
-        )
-
-        return True, url
-
+        return {
+            "title": title,
+            "text": text,
+            "summary": summary,
+            "category": category,
+            "url": url
+        }
     except Exception as e:
-        print("❌ Error processing article:", e)
-        traceback.print_exc()
-        return False, f"Error processing article: {str(e)}"
+        print(f"❌ Error processing article: {e}")
+        return None
