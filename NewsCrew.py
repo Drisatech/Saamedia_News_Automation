@@ -1,40 +1,44 @@
-import logging
-from NewsAgent import process_article
-from NewsTasks import scrape_latest_article
+# NewsCrew.py
 
-# Setup logging
+import logging
+from NewsTasks import get_categorize_task, get_summarize_task
+from NewsAgents import categorizer_agent, summarizer_agent
+from NewsAgents import process_article
+from NewsTools import scrape_latest_articles  # ensure this exists and returns dicts
+
 logging.basicConfig(
     filename='newscrew.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-def run_news_pipeline():
-    """
-    Orchestrates the scraping and processing of the latest news article.
-    Returns:
-        (bool, str): success flag and URL or error message.
-    """
-    try:
-        logging.info("🔍 Scraping latest article...")
-        article = scrape_latest_article()
+# Prepare agents and tasks as lists
+agents = [categorizer_agent, summarizer_agent]
+tasks = [
+    get_categorize_task(categorizer_agent),
+    get_summarize_task(summarizer_agent)
+]
 
+def run_news_pipeline():
+    try:
+        logging.info("Scraping latest article...")
+        article = scrape_latest_articles()
         if not article:
-            logging.warning("⚠️ No new article found.")
+            logging.warning("No article found during scraping.")
             return False, "No article scraped"
 
-        title, content, link = article["title"], article["content"], article["link"]
-        logging.info(f"📰 Article fetched: {title}")
+        title = article.get("title")
+        content = article.get("content")
+        link = article.get("link")
+        logging.info(f"Fetched article: {title}")
 
         success, result = process_article(title, content, link)
-
         if success:
-            logging.info(f"✅ Article published successfully: {result}")
+            logging.info(f"Article published: {result}")
         else:
-            logging.error(f"❌ Article processing failed: {result}")
-
+            logging.error(f"Failed to process article: {result}")
         return success, result
 
     except Exception as e:
-        logging.exception("💥 Unexpected error during news pipeline execution")
+        logging.exception("Unexpected error in pipeline")
         return False, str(e)
