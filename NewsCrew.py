@@ -2,8 +2,8 @@
 
 import logging
 from NewsTasks import get_categorize_task, get_summarize_task
-from NewsAgents import categorizer_agent, summarizer_agent
-from NewsAgents import process_article
+from NewsAgent import categorizer_agent, summarizer_agent
+from NewsAgent import process_article
 from NewsTools import scrape_latest_articles  # ensure this exists and returns dicts
 
 logging.basicConfig(

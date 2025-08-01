@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 
 # 🔐 OpenRouterAI Key
 OPENROUTERAI_API_KEY = os.getenv("OPENROUTERAI_API_KEY", "sk-your-openrouter-key")

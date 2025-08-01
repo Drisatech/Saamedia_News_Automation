@@ -16,3 +16,4 @@ Jsonify
 schedule
 langchain
 langchain-community
+dotenv
