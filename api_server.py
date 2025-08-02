@@ -1,10 +1,10 @@
-#api_server.py
 
 from flask import Flask, jsonify
 from NewsAgent import process_article
 from NewsCrew import scrape_latest_articles
 
 import traceback
+import os
 
 app = Flask(__name__)
 
@@ -57,7 +57,7 @@ def run_news():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"success": False, "url": f"❌ Server error: {str(e)}"})
-
-
+    
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Fallback to 5000 if PORT not set
+        app.run(host="0.0.0.0", port=port)
