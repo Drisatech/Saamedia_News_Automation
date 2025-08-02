@@ -15,7 +15,7 @@ def index():
 @app.route("/run-news", methods=["GET"])
 def run_news():
     try:
-        articles = fetch_latest_articles()
+        articles = scrape_latest_articles()
 
         if not articles:
             return jsonify({"success": False, "url": "❌ No new articles found"})
