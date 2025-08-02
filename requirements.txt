@@ -1,6 +1,5 @@
 embedchain
 crewai_tools
-fastapi
 APScheduler
 beautifulsoup4
 crewai
