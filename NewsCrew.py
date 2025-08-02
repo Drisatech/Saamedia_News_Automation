@@ -1,7 +1,13 @@
+# NewsCrew.py
 
 import logging
-from NewsTasks import get_categorize_task, get_summarize_task
-from NewsAgent import categorizer_agent, summarizer_agent, process_article
+from NewsAgent import (
+    categorizer_agent,
+    summarizer_agent,
+    process_article,
+    get_categorize_task,
+    get_summarize_task
+)
 from NewsTools import (
     scrape_latest_articles,
     publish_to_wordpress,
