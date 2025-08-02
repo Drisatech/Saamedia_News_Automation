@@ -1,7 +1,7 @@
 # NewsTasks.py
 
 from crewai import Task
-from NewsAgents import news_agent
+from NewsAgent import news_agent
 from NewsTools import get_current_datetime
 from db import insert_article
 
