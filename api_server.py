@@ -1,8 +1,6 @@
-
 from flask import Flask, jsonify
 from NewsAgent import process_article
 from NewsCrew import scrape_latest_articles
-
 import traceback
 import os
 
@@ -16,7 +14,6 @@ def index():
 def run_news():
     try:
         articles = scrape_latest_articles()
-
         if not articles:
             return jsonify({"success": False, "url": "❌ No new articles found"})
 
@@ -28,9 +25,7 @@ def run_news():
             title = article.get("title")
             content = article.get("content")
             link = article.get("link")
-
             success, result = process_article(title, content, link)
-
             if success:
                 success_count += 1
             else:
@@ -57,7 +52,7 @@ def run_news():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"success": False, "url": f"❌ Server error: {str(e)}"})
-    
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Fallback to 5000 if PORT not set
-        app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 5000))  # Use Railway-provided PORT or fallback to 5000
+    app.run(host="0.0.0.0", port=port)
