@@ -1,4 +1,5 @@
-from flask import Flask, jsonify
+
+from flask import Flask, jsonify, render_template  # ✅ Added render_template
 from NewsAgent import process_article
 from NewsCrew import scrape_latest_articles
 import traceback
@@ -10,10 +11,6 @@ app = Flask(__name__)
 def index():
     return jsonify({"message": "🚀 SaaMedia News Automation API is running"})
 
-@app.route("/dashboard")
-def dashboard():
-    return "<h1>📰 SaaMedia Dashboard Coming Soon</h1>"
-
 @app.route("/docs")
 def docs():
     return "<h1>📄 API Docs Coming Soon</h1>"
@@ -21,6 +18,12 @@ def docs():
 @app.route("/status")
 def status():
     return jsonify({"status": "ok", "message": "API is healthy ✅"})
+
+@app.route("/dashboard")
+def dashboard():
+    # Fetch articles for the dashboard
+    articles = scrape_latest_articles() or []
+    return render_template("dashboard.html", articles=articles)
 
 @app.route("/run-news", methods=["GET"])
 def run_news():
@@ -72,5 +75,5 @@ def run_news():
         return jsonify({"success": False, "url": f"❌ Server error: {str(e)}"})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Railway uses this
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
