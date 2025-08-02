@@ -1,6 +1,9 @@
 # NewsTasks.py
 
 from crewai import Task
+from NewsAgents import news_agent
+from NewsTools import get_current_datetime
+from db import insert_article
 
 def get_categorize_task(agent):
     return Task(
@@ -27,3 +30,30 @@ def get_summarize_task(agent):
         agent=agent,
         output_key="summary"
     )
+
+def scrape_latest_articles():
+    """
+    Run the news_agent to fetch fresh articles (AI-powered or web scraped),
+    then insert into SQLite for persistence.
+    """
+    print("🚀 Running News Agent to fetch latest articles...")
+
+    result = news_agent.run()
+    if not result or not isinstance(result, list):
+        print("⚠️ No valid result from News Agent.")
+        return []
+
+    inserted = 0
+    for article in result:
+        title = article.get("title")
+        content = article.get("content")
+        source = article.get("link") or article.get("source")
+        category = article.get("category", "Uncategorized")
+        image_url = article.get("image_url")
+
+        success = insert_article(title, content, source, category, image_url)
+        if success:
+            inserted += 1
+
+    print(f"✅ {inserted} new articles inserted into database.")
+    return result

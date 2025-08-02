@@ -1,4 +1,3 @@
-# NewsCrew.py
 
 import logging
 from NewsTasks import get_categorize_task, get_summarize_task
@@ -32,43 +31,47 @@ def run_news_pipeline():
 
         if not articles:
             logging.warning("No articles scraped from any source.")
-            return False, "No articles found."
+            return []
 
-        success_count = 0
-        failure_count = 0
+        processed_articles = []
 
         for article in articles:
             title = article.get("title")
             content = article.get("content")
             link = article.get("link")
+            image_url = article.get("image_url", "")  # Optional field
 
             if not all([title, content, link]):
                 logging.warning("Incomplete article skipped.")
                 continue
 
             logging.info(f"Processing article: {title}")
-            result = process_article(title, content, link)
+            result = process_article(title, content, link, image_url=image_url)
 
             if result:
                 try:
-                    publish_to_wordpress(result["title"], result["summary"], result["category"])
+                    publish_to_wordpress(result["title"], result["summary"], result["category"], result.get("image_url"))
                     log_article(result)
                     if ENABLE_WHATSAPP_ALERTS:
                         notify_whatsapp(result)
                     logging.info(f"✅ Article published: {result['title']}")
-                    success_count += 1
+
+                    # Append processed article (for dashboard or scheduler)
+                    processed_articles.append({
+                        "title": result["title"],
+                        "content": result["summary"],  # Can switch to full content if preferred
+                        "category": result["category"],
+                        "link": link,
+                        "image_url": image_url
+                    })
                 except Exception as e:
                     logging.error(f"❌ Failed to publish/log/notify for article: {e}")
-                    failure_count += 1
             else:
                 logging.error("❌ Article processing failed.")
-                failure_count += 1
 
-        summary_msg = f"{success_count} article(s) published, {failure_count} failed."
-        logging.info(summary_msg)
-
-        return True, summary_msg
+        logging.info(f"{len(processed_articles)} article(s) successfully processed and published.")
+        return processed_articles
 
     except Exception as e:
         logging.exception("❌ Unexpected error in news pipeline.")
-        return False, str(e)
+        return []

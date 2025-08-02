@@ -1,31 +1,44 @@
 import time
-import schedule
-import logging
+import traceback
 from NewsCrew import run_news_pipeline
-from config import SCRAPE_INTERVAL_MINUTES
+from NewsAgent import process_article
 
-# Configure logging
-logging.basicConfig(
-    filename='scheduler.log',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+def main():
+    print("Starting SaaMedia News Automation Scheduler...\n")
 
-def job():
-    logging.info("⏳ Scheduled job started")
-    success, response = run_news_pipeline()
-    if success:
-        logging.info(f"✅ News published successfully: {response}")
-    else:
-        logging.error(f"❌ News publishing failed: {response}")
+    try:
+        # STEP 1: Run the full news pipeline
+        results = run_news_pipeline()
 
-def start_scheduler():
-    logging.info(f"🗓️ Scheduler initialized. Running every {SCRAPE_INTERVAL_MINUTES} minutes.")
-    schedule.every(SCRAPE_INTERVAL_MINUTES).minutes.do(job)
+        print(f"\n{len(results)} articles processed by CrewAI.\n")
 
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+        for article in results:
+            title = article.get("title")
+            content = article.get("content")
+            category = article.get("category", "Uncategorized")
+            link = article.get("link")
+            image_url = article.get("image_url")  # Optional: image from feed or scraping
+
+            if title and content:
+                print(f"Posting article: {title}")
+                success, message = process_article(
+                    title=title,
+                    content=content,
+                    category=category,
+                    link=link,
+                    image_url=image_url
+                )
+                print(f"Status: {'✅ Success' if success else '❌ Failed'} | {message}")
+            else:
+                print("Skipping invalid article (missing title or content).")
+
+    except Exception as e:
+        print("Scheduler failed due to error:")
+        traceback.print_exc()
 
 if __name__ == "__main__":
-    start_scheduler()
+    # Run every 30 minutes
+    while True:
+        main()
+        print("Sleeping for 30 minutes...\n")
+        time.sleep(1800)  # 1800 seconds = 30 minutes

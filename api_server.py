@@ -1,9 +1,11 @@
-
-from flask import Flask, jsonify, render_template  # ✅ Added render_template
+# api_server.py
+from flask import Flask, render_template, request, jsonify
+import sqlite3
+import os
+from NewsCrew import run_news_scraper
 from NewsAgent import process_article
 from NewsCrew import scrape_latest_articles
 import traceback
-import os
 
 app = Flask(__name__)
 
@@ -11,69 +13,60 @@ app = Flask(__name__)
 def index():
     return jsonify({"message": "🚀 SaaMedia News Automation API is running"})
 
-@app.route("/docs")
-def docs():
-    return "<h1>📄 API Docs Coming Soon</h1>"
-
 @app.route("/status")
 def status():
     return jsonify({"status": "ok", "message": "API is healthy ✅"})
 
+app = Flask(__name__, template_folder="templates")
+
+DB_PATH = os.path.join(os.getcwd(), "news_articles.db")
+
 @app.route("/dashboard")
 def dashboard():
-    # Fetch articles for the dashboard
-    articles = scrape_latest_articles() or []
-    return render_template("dashboard.html", articles=articles)
+    query = request.args.get("q", "").strip()
+    category_filter = request.args.get("category", "").strip()
 
-@app.route("/run-news", methods=["GET"])
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    base_query = "SELECT title, category, source, created_at FROM articles"
+    conditions = []
+    values = []
+
+    if query:
+        conditions.append("(title LIKE ? OR content LIKE ?)")
+        values.extend([f"%{query}%", f"%{query}%"])
+    if category_filter:
+        conditions.append("category LIKE ?")
+        values.append(f"%{category_filter}%")
+
+    if conditions:
+        base_query += " WHERE " + " AND ".join(conditions)
+
+    base_query += " ORDER BY created_at DESC LIMIT 100"
+    cursor.execute(base_query, values)
+    rows = cursor.fetchall()
+    conn.close()
+
+    articles = [
+        {"title": row[0], "category": row[1], "source": row[2], "created_at": row[3]}
+        for row in rows
+    ]
+
+    return render_template("dashboard.html", articles=articles, query=query, category=category_filter)
+
+@app.route("/docs")
+def api_docs():
+    return render_template("docs.html")
+
+@app.route("/run-news")
 def run_news():
     try:
-        articles = scrape_latest_articles()
-        if not articles:
-            return jsonify({"success": False, "url": "❌ No new articles found"})
-
-        total = len(articles)
-        success_count = 0
-        failures = []
-
-        for article in articles:
-            title = article.get("title")
-            content = article.get("content")
-            link = article.get("link")
-
-            try:
-                result = process_article(title, content, link)
-                if isinstance(result, tuple) and len(result) == 2:
-                    success, message = result
-                else:
-                    success, message = False, "Invalid response format from process_article"
-
-                if success:
-                    success_count += 1
-                else:
-                    failures.append({"title": title, "error": message})
-            except Exception as inner_error:
-                failures.append({"title": title, "error": str(inner_error)})
-
-        if success_count == total:
-            return jsonify({"success": True, "url": f"✅ All {total} articles processed successfully!"})
-        elif success_count > 0:
-            return jsonify({
-                "success": True,
-                "url": f"⚠️ {success_count}/{total} articles processed. Some failed.",
-                "failures": failures
-            })
-        else:
-            return jsonify({
-                "success": False,
-                "url": "❌ All articles failed to process.",
-                "failures": failures
-            })
-
+        results = run_news_scraper()
+        return jsonify({"status": "running", "results": results})
     except Exception as e:
-        traceback.print_exc()
-        return jsonify({"success": False, "url": f"❌ Server error: {str(e)}"})
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True, port=8000)

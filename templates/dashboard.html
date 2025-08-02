@@ -1,68 +1,69 @@
-<!-- dashboard.html -->
-
+<!-- templates/dashboard.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <title>SaaMedia News Dashboard</title>
     <style>
-        body {
-            font-family: sans-serif;
-            background-color: #f8f9fa;
-            padding: 20px;
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border: 1px solid #ccc; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .search-container { margin-bottom: 20px; }
+        input[type="text"], select {
+            padding: 8px;
+            width: 250px;
+            margin-right: 10px;
         }
-        h2 {
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid #aaa;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #0077b6;
+        button {
+            padding: 8px 12px;
+            background-color: #007bff;
             color: white;
+            border: none;
+            cursor: pointer;
         }
-        tr:nth-child(even) {
-            background-color: #f1f1f1;
-        }
-        .footer {
-            text-align: center;
-            padding-top: 15px;
-            color: gray;
-            font-size: 12px;
-        }
+        button:hover { background-color: #0056b3; }
     </style>
 </head>
 <body>
-    <h2>SaaMedia News Automation Dashboard</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Source</th>
-                <th>Published</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for article in articles %}
-            <tr>
-                <td>{{ article.title }}</td>
-                <td>{{ article.category }}</td>
-                <td><a href="{{ article.source }}" target="_blank">View Source</a></td>
-                <td>{{ article.created_at }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 
-    <div class="footer">
-        &copy; 2025 SaaMedia News AI System – Powered by Drisa Infotech Solutions
-    </div>
+<h1>SaaMedia News Dashboard</h1>
+
+<div class="search-container">
+    <form method="get" action="/dashboard">
+        <input type="text" name="q" placeholder="Search title or content..." value="{{ query | default('') }}">
+        <input type="text" name="category" placeholder="Filter by category..." value="{{ category | default('') }}">
+        <button type="submit">Search</button>
+    </form>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Source</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for article in articles %}
+        <tr>
+            <td><a href="{{ article.source }}" target="_blank">{{ article.title }}</a></td>
+            <td>
+                <a href="/dashboard?category={{ article.category }}">{{ article.category }}</a>
+            </td>
+            <td>
+                <a href="{{ article.source }}" target="_blank">{{ article.source | replace("https://", "") | replace("http://", "") }}</a>
+            </td>
+            <td>{{ article.created_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
 </body>
 </html>

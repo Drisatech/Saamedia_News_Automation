@@ -1,0 +1,45 @@
+<!-- templates/docs.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Documentation - SaaMedia News</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+        h1, h2, h3 { color: #333; }
+        code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        .endpoint { margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+
+<h1>SaaMedia News Automation API Docs</h1>
+
+<p>This API allows scraping, viewing, and managing automated news articles for the <strong>SaaMedia Platform</strong>.</p>
+
+<div class="endpoint">
+    <h2>GET /dashboard</h2>
+    <p>Displays the list of stored articles with search and filter support.</p>
+    <ul>
+        <li><code>?q=keyword</code> – filter by title/content</li>
+        <li><code>?category=Politics</code> – filter by category</li>
+    </ul>
+</div>
+
+<div class="endpoint">
+    <h2>GET /run-news</h2>
+    <p>Runs the news agent to scrape and store the latest articles from supported sources.</p>
+    <p><strong>Example Response:</strong></p>
+    <pre>{
+  "status": "running",
+  "results": ["Article 1", "Article 2", ...]
+}</pre>
+</div>
+
+<div class="endpoint">
+    <h2>GET /docs</h2>
+    <p>Displays this documentation page.</p>
+</div>
+
+</body>
+</html>

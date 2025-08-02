@@ -13,17 +13,19 @@ from urllib.parse import urljoin
 import logging
 import base64
 
+def publish_to_wordpress(title, content, category, image_url=None):
+    url = "https://saamedia.info/wp-json/saamedia/v1/post-news"
+    payload = {
+        "title": title,
+        "content": content,
+        "category": category,
+        "image_url": image_url  # Include image_url if present
+    }
 
-def publish_to_wordpress(title, content, category):
-    """Publishes a post to WordPress using the REST API."""
-    try:
-        # Prepare authentication
-        credentials = f"{WP_USERNAME}:{WP_APP_PASSWORD}"
-        token = base64.b64encode(credentials.encode())
-        headers = {
-            "Authorization": f"Basic {token.decode('utf-8')}",
-            "Content-Type": "application/json"
-        }
+    response = requests.post(url, json=payload)
+    response.raise_for_status()  # Will raise HTTPError if request fails
+
+    return response.json()
 
         # Optional: fetch or create category via REST API
         cat_resp = requests.get(f"{WORDPRESS_REST_URL}/categories?search={category}", headers=headers)
@@ -47,6 +49,7 @@ def publish_to_wordpress(title, content, category):
             "content": content,
             "status": "publish",
             "categories": [category_id]
+            "image_url": image_url
         }
 
         post_resp = requests.post(f"{WORDPRESS_REST_URL}/posts", headers=headers, json=post_data)
