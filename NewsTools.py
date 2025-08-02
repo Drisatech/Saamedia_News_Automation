@@ -1,5 +1,8 @@
 import sqlite3
 import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+import logging
 from config import (
     WORDPRESS_REST_URL,
     WP_USERNAME,
@@ -8,26 +11,23 @@ from config import (
     WHATSAPP_API,
     DATABASE_FILE
 )
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-import logging
-import base64
 
+# Set up logging
+logging.basicConfig(
+    filename="newstools.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# Helper: Publish to WordPress
 def publish_to_wordpress(title, content, category, image_url=None):
-    url = "https://saamedia.info/wp-json/saamedia/v1/post-news"
-    payload = {
-        "title": title,
-        "content": content,
-        "category": category,
-        "image_url": image_url  # Include image_url if present
-    }
+    try:
+        headers = {
+            "Authorization": f"Basic {WP_APP_PASSWORD}",
+            "Content-Type": "application/json"
+        }
 
-    response = requests.post(url, json=payload)
-    response.raise_for_status()  # Will raise HTTPError if request fails
-
-    return response.json()
-
-        # Optional: fetch or create category via REST API
+        # Check if category exists or create
         cat_resp = requests.get(f"{WORDPRESS_REST_URL}/categories?search={category}", headers=headers)
         cat_resp.raise_for_status()
         categories = cat_resp.json()
@@ -43,14 +43,17 @@ def publish_to_wordpress(title, content, category, image_url=None):
             new_cat_resp.raise_for_status()
             category_id = new_cat_resp.json()['id']
 
-        # Create post
+        # Post data
         post_data = {
             "title": title,
             "content": content,
             "status": "publish",
             "categories": [category_id]
-            "image_url": image_url
         }
+
+        # If image URL is provided
+        if image_url:
+            post_data["image_url"] = image_url
 
         post_resp = requests.post(f"{WORDPRESS_REST_URL}/posts", headers=headers, json=post_data)
         post_resp.raise_for_status()
@@ -62,9 +65,8 @@ def publish_to_wordpress(title, content, category, image_url=None):
         print(f"❌ WordPress publish error: {e}")
         return None
 
-
+# Log article to SQLite
 def log_article(title, category, url, status):
-    """Logs published article into SQLite database."""
     try:
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
@@ -86,9 +88,8 @@ def log_article(title, category, url, status):
     except Exception as e:
         print(f"❌ Logging error: {e}")
 
-
+# WhatsApp notification
 def notify_whatsapp(message):
-    """Sends WhatsApp alert using CallMeBot."""
     try:
         url = f"{WHATSAPP_API}&text={message}"
         response = requests.get(url)
@@ -99,15 +100,7 @@ def notify_whatsapp(message):
     except Exception as e:
         print(f"❌ WhatsApp alert error: {e}")
 
-
-# scrape_latest_articles
-
-logging.basicConfig(
-    filename="newstools.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
+# Scrape news headlines
 def scrape_latest_articles():
     sources = {
         "https://www.channelstv.com": "div.post-item a",
@@ -156,7 +149,7 @@ def scrape_latest_articles():
                     articles.append({
                         "title": title,
                         "link": full_link,
-                        "content": f"Full content to be fetched from {full_link}"  # Placeholder
+                        "content": f"Full content to be fetched from {full_link}"
                     })
                     count += 1
 
