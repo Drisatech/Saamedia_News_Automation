@@ -44,24 +44,14 @@ summarizer_agent = Agent(
 )
 
 # Main Article Processor
-def process_article(title, text, url):
+def process_article(title, content, link):
     try:
-        print(f"\n🔍 Processing: {title}")
-        print("📂 Sending to categorizer_agent...")
-        category_prompt = f"Classify the following news headline:\n\nTitle: {title}\n\nText: {text}\n\nCategory:"
-        category = generate_response(category_prompt).strip()
+        # Replace this with your actual processing logic
+        print(f"Processing article: {title}")
+        
+        # Do something with content or link...
 
-        print("📂 Sending to summarizer_agent...")
-        summary_prompt = f"Summarize the following article:\n\nTitle: {title}\n\nText: {text}\n\nSummary:"
-        summary = generate_response(summary_prompt).strip()
+        return True, "Successfully processed"
 
-        return {
-            "title": title,
-            "text": text,
-            "summary": summary,
-            "category": category,
-            "url": url
-        }
     except Exception as e:
-        print(f"❌ Error processing article: {e}")
-        return None
+        return False, f"Error: {str(e)}"

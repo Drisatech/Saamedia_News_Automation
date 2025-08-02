@@ -10,6 +10,18 @@ app = Flask(__name__)
 def index():
     return jsonify({"message": "🚀 SaaMedia News Automation API is running"})
 
+@app.route("/dashboard")
+def dashboard():
+    return "<h1>📰 SaaMedia Dashboard Coming Soon</h1>"
+
+@app.route("/docs")
+def docs():
+    return "<h1>📄 API Docs Coming Soon</h1>"
+
+@app.route("/status")
+def status():
+    return jsonify({"status": "ok", "message": "API is healthy ✅"})
+
 @app.route("/run-news", methods=["GET"])
 def run_news():
     try:
@@ -25,14 +37,20 @@ def run_news():
             title = article.get("title")
             content = article.get("content")
             link = article.get("link")
-            success, result = process_article(title, content, link)
-            if success:
-                success_count += 1
-            else:
-                failures.append({
-                    "title": title,
-                    "error": result
-                })
+
+            try:
+                result = process_article(title, content, link)
+                if isinstance(result, tuple) and len(result) == 2:
+                    success, message = result
+                else:
+                    success, message = False, "Invalid response format from process_article"
+
+                if success:
+                    success_count += 1
+                else:
+                    failures.append({"title": title, "error": message})
+            except Exception as inner_error:
+                failures.append({"title": title, "error": str(inner_error)})
 
         if success_count == total:
             return jsonify({"success": True, "url": f"✅ All {total} articles processed successfully!"})
@@ -54,5 +72,5 @@ def run_news():
         return jsonify({"success": False, "url": f"❌ Server error: {str(e)}"})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Use Railway-provided PORT or fallback to 5000
+    port = int(os.environ.get("PORT", 5000))  # Railway uses this
     app.run(host="0.0.0.0", port=port)
