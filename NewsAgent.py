@@ -77,7 +77,7 @@ def process_article(title, content, link, category=None, image_url=None):
 
         # Step 2: Logging or notification
         if success:
-            log_article(title, link, status="published", DateTime=None)
+            log_article(title, category, link, success)
             notify_whatsapp(f"✅ Posted: {title}")
         else:
             notify_whatsapp(f"❌ Failed: {title} | {message}")

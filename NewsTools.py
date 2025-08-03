@@ -13,6 +13,7 @@ from urllib.parse import urljoin
 import logging
 import base64
 import mimetypes
+import datetime
 
 def get_category_id_by_name(category_name, WORDPRESS_REST_URL, auth):
     # Get all categories and find the ID for the given name
@@ -165,7 +166,10 @@ def scrape_latest_articles():
                     articles.append({
                         "title": title,
                         "link": full_link,
-                        "content": f"Full content to be fetched from {full_link}"  # Placeholder
+                        "content": f"Full content to be fetched from {full_link}",  # Placeholder
+                        "category": source.replace("https://", "").replace("www.", "").split(".")[0].capitalize(),  # crude category
+                        "source": source,
+                        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
                     })
                     count += 1
 
