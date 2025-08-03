@@ -11,8 +11,8 @@ def index():
     return jsonify({"message": "🚀 SaaMedia News Automation API is running"})
 
 @app.route("/docs")
-def docs():
-    return "<h1>📄 API Docs Coming Soon</h1>"
+def api_docs():
+    return render_template("docs.html")
 
 @app.route("/status")
 def status():
@@ -23,10 +23,6 @@ def dashboard():
     # Fetch articles for the dashboard
     articles = scrape_latest_articles() or []
     return render_template("dashboard.html", articles=articles)
-    
-@app.route("/docs")
-def api_docs():
-    return render_template("docs.html")
 
 @app.route("/run-news", methods=["GET"])
 def run_news():
