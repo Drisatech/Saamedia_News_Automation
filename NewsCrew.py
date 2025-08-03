@@ -51,7 +51,13 @@ def run_news_pipeline():
 
             if result:
                 try:
-                    publish_to_wordpress(result["title"], result["summary"], result["category"])
+                    # After scraping:
+                    title = result['title']
+                    full_content = result['summary']  # Make sure this is the full HTML/text
+                    image_url = result.get('image_url', '')   # Main/featured image URL
+
+                    publish_to_wordpress(title, full_content, image_url)
+
                     log_article(result)
                     if ENABLE_WHATSAPP_ALERTS:
                         notify_whatsapp(result)

@@ -12,59 +12,64 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import logging
 import base64
+import mimetypes
 
-def publish_to_wordpress(title, content, category, image_url):
-    """Publish a post to WordPress via the REST API."""
-    try:
-        # Create authentication header
-        credentials = f"{WP_USERNAME}:{WP_APP_PASSWORD}"
-        token = base64.b64encode(credentials.encode()).decode('utf-8')
-        headers = {
-            'Authorization': f'Basic {token}',
-            'Content-Type': 'application/json'
+def get_category_id_by_name(category_name, WORDPRESS_REST_URL, auth):
+    # Get all categories and find the ID for the given name
+    resp = requests.get(f"{WORDPRESS_REST_URL}/categories?search={category_name}", auth=auth)
+    if resp.status_code == 200 and resp.json():
+        return resp.json()[0]['id']
+    # If not found, create the category
+    create_resp = requests.post(f"{WORDPRESS_REST_URL}/categories", json={"name": category_name}, auth=auth)
+    if create_resp.status_code == 201:
+        return create_resp.json()['id']
+    return None
+
+def publish_to_wordpress(title, content, image_url=None, category_name=None, tags=None):
+    auth = (WP_USERNAME, WP_APP_PASSWORD)
+    posts_url = f"{WORDPRESS_REST_URL}/posts"
+
+    # Step 1: Upload the image and get its media ID
+    featured_media_id = None
+    if image_url:
+        img_data = requests.get(image_url).content
+        filename = image_url.split("/")[-1]
+        mime_type, _ = mimetypes.guess_type(filename)
+        if not mime_type:
+            mime_type = "image/jpeg"
+        media_headers = {
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": mime_type
         }
+        media_resp = requests.post(
+            f"{WORDPRESS_REST_URL}/media",
+            headers=media_headers,
+            data=img_data,
+            auth=auth,
+        )
+        if media_resp.status_code == 201:
+            featured_media_id = media_resp.json().get("id")
 
-        # Use the correct REST URL from config
-        site_url = WORDPRESS_REST_URL.replace("/wp-json/wp/v2", "")
+    # Step 2: Get category ID from name
+    category_id = None
+    if category_name:
+        category_id = get_category_id_by_name(category_name, WORDPRESS_REST_URL, auth)
 
-        # Get category ID (or create if not exists)
-        cat_response = requests.get(
-            f"{site_url}/wp-json/wp/v2/categories?search={category}", headers=headers)
-        cat_response.raise_for_status()
-        cat_data = cat_response.json()
+    # Step 3: Publish the post with full content and featured image
+    post_data = {
+        "title": title,
+        "content": content,
+        "status": "publish",
+    }
+    if featured_media_id:
+        post_data["featured_media"] = featured_media_id
+    if category_id:
+        post_data["categories"] = [category_id]
+    if tags:
+        post_data["tags"] = tags
 
-        if cat_data:
-            category_id = cat_data[0]['id']
-        else:
-            # Create new category
-            create_cat = requests.post(
-                f"{site_url}/wp-json/wp/v2/categories",
-                headers=headers,
-                json={"name": category}
-            )
-            create_cat.raise_for_status()
-            category_id = create_cat.json()['id']
-
-        # Prepare post payload
-        post_data = {
-            'title': title,
-            'content': content,
-            'status': 'publish',
-            'categories': [category_id],
-        }
-        # Optionally add image_url as a custom field or featured_media if supported
-        if image_url:
-            post_data['meta'] = {'image_url': image_url}
-
-        post_url = f"{site_url}/wp-json/wp/v2/posts"
-        response = requests.post(post_url, headers=headers, json=post_data)
-        response.raise_for_status()
-
-        return response.json().get('link')  # Return published URL
-
-    except Exception as e:
-        print(f"❌ WordPress publish error: {e}")
-        return None
+    resp = requests.post(posts_url, json=post_data, auth=auth)
+    return resp
 
 
 def log_article(title, category, url, status):
