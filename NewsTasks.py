@@ -1,22 +1,27 @@
-# NewsTasks.py
+from crewai import Task
 
-def categorize_article(title: str, content: str) -> str:
-    """
-    Categorize the article based on content.
-    This is a placeholder — replace with AI categorization logic.
-    """
-    if "election" in content.lower():
-        return "Politics"
-    elif "economy" in content.lower():
-        return "Business"
-    elif "sport" in content.lower():
-        return "Sports"
-    else:
-        return "General"
+def get_categorize_task(agent):
+    return Task(
+        description=(
+            "Classify the news article into an appropriate category such as "
+            "'Politics', 'Business', 'Entertainment', 'Technology', 'Sports', or 'Health'.\n\n"
+            "Article title: {title}\n"
+            "Content:\n{content}"
+        ),
+        expected_output="The appropriate category label for the article.",
+        agent=agent,
+        output_key="category"
+    )
 
-def summarize_article(title: str, content: str) -> str:
-    """
-    Summarize the article content.
-    This is a placeholder — replace with AI summarization logic.
-    """
-    return content[:200] + "..." if len(content) > 200 else content
+def get_summarize_task(agent):
+    return Task(
+        description=(
+            "Generate a concise and clear summary of the following news article. "
+            "Focus on key facts and relevant context.\n\n"
+            "Title: {title}\n"
+            "Content:\n{content}"
+        ),
+        expected_output="A well-written summary paragraph (2–3 sentences) of the article.",
+        agent=agent,
+        output_key="summary"
+    )

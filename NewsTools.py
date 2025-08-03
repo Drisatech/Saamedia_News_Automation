@@ -1,72 +1,74 @@
 import sqlite3
 import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-import logging
 from config import (
-    WORDPRESS_REST_URL,
+    WORDPRESS_REST_URL,  # e.g., "https://saamedia.info/wp-json/wp/v2"
     WP_USERNAME,
     WP_APP_PASSWORD,
     WHATSAPP_PHONE,
     WHATSAPP_API,
     DATABASE_FILE
 )
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+import logging
+import base64
 
-# Set up logging
-logging.basicConfig(
-    filename="newstools.log",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
-# Helper: Publish to WordPress
-def publish_to_wordpress(title, content, category, image_url=None):
+def publish_to_wordpress(title, content, category, image_url):
+    """Publish a post to WordPress via the REST API."""
     try:
+        # Create authentication header
+        credentials = f"{WP_USERNAME}:{WP_APP_PASSWORD}"
+        token = base64.b64encode(credentials.encode()).decode('utf-8')
         headers = {
-            "Authorization": f"Basic {WP_APP_PASSWORD}",
-            "Content-Type": "application/json"
+            'Authorization': f'Basic {token}',
+            'Content-Type': 'application/json'
         }
 
-        # Check if category exists or create
-        cat_resp = requests.get(f"{WORDPRESS_REST_URL}/categories?search={category}", headers=headers)
-        cat_resp.raise_for_status()
-        categories = cat_resp.json()
+        # Use the correct REST URL from config
+        site_url = WORDPRESS_REST_URL.replace("/wp-json/wp/v2", "")
 
-        if categories:
-            category_id = categories[0]['id']
+        # Get category ID (or create if not exists)
+        cat_response = requests.get(
+            f"{site_url}/wp-json/wp/v2/categories?search={category}", headers=headers)
+        cat_response.raise_for_status()
+        cat_data = cat_response.json()
+
+        if cat_data:
+            category_id = cat_data[0]['id']
         else:
-            new_cat_resp = requests.post(
-                f"{WORDPRESS_REST_URL}/categories",
+            # Create new category
+            create_cat = requests.post(
+                f"{site_url}/wp-json/wp/v2/categories",
                 headers=headers,
                 json={"name": category}
             )
-            new_cat_resp.raise_for_status()
-            category_id = new_cat_resp.json()['id']
+            create_cat.raise_for_status()
+            category_id = create_cat.json()['id']
 
-        # Post data
+        # Prepare post payload
         post_data = {
-            "title": title,
-            "content": content,
-            "status": "publish",
-            "categories": [category_id]
+            'title': title,
+            'content': content,
+            'status': 'publish',
+            'categories': [category_id],
         }
-
-        # If image URL is provided
+        # Optionally add image_url as a custom field or featured_media if supported
         if image_url:
-            post_data["image_url"] = image_url
+            post_data['meta'] = {'image_url': image_url}
 
-        post_resp = requests.post(f"{WORDPRESS_REST_URL}/posts", headers=headers, json=post_data)
-        post_resp.raise_for_status()
-        post_url = post_resp.json().get("link")
-        print(f"✅ Published: {post_url}")
-        return post_url
+        post_url = f"{site_url}/wp-json/wp/v2/posts"
+        response = requests.post(post_url, headers=headers, json=post_data)
+        response.raise_for_status()
+
+        return response.json().get('link')  # Return published URL
 
     except Exception as e:
         print(f"❌ WordPress publish error: {e}")
         return None
 
-# Log article to SQLite
+
 def log_article(title, category, url, status):
+    """Logs published article into SQLite database."""
     try:
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
@@ -88,8 +90,9 @@ def log_article(title, category, url, status):
     except Exception as e:
         print(f"❌ Logging error: {e}")
 
-# WhatsApp notification
+
 def notify_whatsapp(message):
+    """Sends WhatsApp alert using CallMeBot."""
     try:
         url = f"{WHATSAPP_API}&text={message}"
         response = requests.get(url)
@@ -100,7 +103,15 @@ def notify_whatsapp(message):
     except Exception as e:
         print(f"❌ WhatsApp alert error: {e}")
 
-# Scrape news headlines
+
+# scrape_latest_articles
+
+logging.basicConfig(
+    filename="newstools.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 def scrape_latest_articles():
     sources = {
         "https://www.channelstv.com": "div.post-item a",
@@ -149,7 +160,7 @@ def scrape_latest_articles():
                     articles.append({
                         "title": title,
                         "link": full_link,
-                        "content": f"Full content to be fetched from {full_link}"
+                        "content": f"Full content to be fetched from {full_link}"  # Placeholder
                     })
                     count += 1
 

@@ -1,13 +1,8 @@
 # NewsCrew.py
 
 import logging
-from NewsAgent import (
-    categorizer_agent,
-    summarizer_agent,
-    process_article,
-    get_categorize_task,
-    get_summarize_task
-)
+from NewsTasks import get_categorize_task, get_summarize_task
+from NewsAgent import categorizer_agent, summarizer_agent, process_article
 from NewsTools import (
     scrape_latest_articles,
     publish_to_wordpress,
@@ -56,7 +51,7 @@ def run_news_pipeline():
 
             if result:
                 try:
-                    publish_to_wordpress(result["title"], result["summary"], result["category"], result.get("image_url"))
+                    publish_to_wordpress(result["title"], result["summary"], result["category"])
                     log_article(result)
                     if ENABLE_WHATSAPP_ALERTS:
                         notify_whatsapp(result)
