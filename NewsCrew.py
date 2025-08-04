@@ -40,6 +40,7 @@ def run_news_pipeline():
             title = article.get("title")
             content = article.get("content")
             link = article.get("link")
+            category = article.get("category")
             image_url = article.get("image_url", "")  # Optional field
 
             if not all([title, content, link]):
@@ -47,34 +48,26 @@ def run_news_pipeline():
                 continue
 
             logging.info(f"Processing article: {title}")
-            result = process_article(title, content, link, image_url=image_url)
+            success, message = process_article(
+                title, content, link, category=category, image_url=image_url
+            )
 
-            if result:
-                try:
-                    # After scraping:
-                    title = result['title']
-                    full_content = result['summary']  # Make sure this is the full HTML/text
-                    image_url = result.get('image_url', '')   # Main/featured image URL
+            if success:
+                log_article(title, category, link, success)
+                if ENABLE_WHATSAPP_ALERTS:
+                    notify_whatsapp(f"✅ Posted: {title}\n🔗 {message}")
+                logging.info(f"✅ Article published: {title}")
 
-                    publish_to_wordpress(title, full_content, image_url)
-
-                    log_article(result)
-                    if ENABLE_WHATSAPP_ALERTS:
-                        notify_whatsapp(result)
-                    logging.info(f"✅ Article published: {result['title']}")
-
-                    # Append processed article (for dashboard or scheduler)
-                    processed_articles.append({
-                        "title": result["title"],
-                        "content": result["summary"],  # Can switch to full content if preferred
-                        "category": result["category"],
-                        "link": link,
-                        "image_url": image_url
-                    })
-                except Exception as e:
-                    logging.error(f"❌ Failed to publish/log/notify for article: {e}")
+                # Append processed article (for dashboard or scheduler)
+                processed_articles.append({
+                    "title": title,
+                    "content": content,
+                    "category": category,
+                    "link": link,
+                    "image_url": image_url
+                })
             else:
-                logging.error("❌ Article processing failed.")
+                logging.error(f"❌ Article processing failed: {message}")
 
         logging.info(f"{len(processed_articles)} article(s) successfully processed and published.")
         return processed_articles

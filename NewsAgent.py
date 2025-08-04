@@ -60,7 +60,13 @@ def post_to_wordpress(title, content, category, image_url=None):
         )
 
         if response.status_code == 200:
-            return True, f"Posted successfully. WP Response: {response.json()}"
+            # Try to get the new post URL from the response
+            try:
+                wp_response = response.json()
+                post_url = wp_response.get("link") or wp_response.get("url") or "https://saamedia.info"
+            except Exception:
+                post_url = "https://saamedia.info"
+            return True, post_url
         else:
             return False, f"WordPress API Error: {response.text}"
 
@@ -78,7 +84,8 @@ def process_article(title, content, link, category=None, image_url=None):
         # Step 2: Logging or notification
         if success:
             log_article(title, category, link, success)
-            notify_whatsapp(f"✅ Posted: {title}")
+            # WhatsApp notification includes title and destination link
+            notify_whatsapp(f"✅ Posted: {title}\n🔗 {message}")
         else:
             notify_whatsapp(f"❌ Failed: {title} | {message}")
 

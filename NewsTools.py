@@ -127,25 +127,27 @@ def scrape_latest_articles(source, max_articles=5):
     try:
         resp = requests.get(source, headers=headers, timeout=10)
         soup = BeautifulSoup(resp.text, 'html.parser')
-        links = soup.find_all("a")
+        # Adjust selector for your news source
+        post_links = soup.find_all("h2", class_="post-title")
         count = 0
 
-        for link_tag in links:
+        for post in post_links:
             if count >= max_articles:
                 break
-            href = link_tag.get("href")
-            if not href:
+            a_tag = post.find("a")
+            if not a_tag or not a_tag.get("href"):
                 continue
 
-            full_link = urljoin(source, href)
+            full_link = a_tag["href"]
             if full_link in visited_links:
                 continue
 
             visited_links.add(full_link)
-            title = link_tag.get_text(strip=True)
+            title = a_tag.get_text(strip=True)
 
-            # Fetch the article page and extract content
+            # Fetch the article page and extract content and featured image
             article_content = ""
+            image_url = None
             try:
                 article_resp = requests.get(full_link, headers=headers, timeout=10)
                 article_soup = BeautifulSoup(article_resp.text, 'html.parser')
@@ -153,17 +155,24 @@ def scrape_latest_articles(source, max_articles=5):
                 article_content = "\n".join(
                     p.get_text() for p in paragraphs if len(p.get_text()) > 60
                 )
+                # Try to find a featured image
+                img_tag = article_soup.find("img")
+                if img_tag and img_tag.get("src"):
+                    image_url = img_tag["src"]
+                    if image_url.startswith("/"):
+                        image_url = urljoin(source, image_url)
             except Exception as e:
                 logging.warning(f"❌ Failed to fetch article content from {full_link}: {e}")
 
             if title and full_link and article_content:
                 articles.append({
                     "title": title,
-                    "link": full_link,
-                    "content": article_content,  # Use the real content
-                    "category": source.replace("https://", "").replace("www.", "").split(".")[0].capitalize(),
+                    "content": article_content,
+                    "category": "Channelstv",
                     "source": source,
-                    "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                    "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "image_url": image_url,
+                    "link": full_link
                 })
                 count += 1
 
