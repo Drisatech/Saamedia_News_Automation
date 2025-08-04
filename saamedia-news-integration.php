@@ -25,12 +25,18 @@ function saamedia_receive_news($request) {
     require_once(ABSPATH . 'wp-admin/includes/file.php');
     require_once(ABSPATH . 'wp-admin/includes/media.php');
 
+    // Get or create category
+    $category_id = get_cat_ID($category);
+    if ($category_id == 0) {
+        $category_id = wp_create_category($category);
+    }
+
     $post = array(
         'post_title'   => $title,
         'post_content' => $content,
         'post_status'  => 'publish',
         'post_author'  => 1,
-        'tags_input'   => array($category),
+        'post_category'=> array($category_id),
     );
 
     $post_id = wp_insert_post($post);

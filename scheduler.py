@@ -37,8 +37,8 @@ def main():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    # Run every 30 minutes
+    # Run every 60 minutes
     while True:
         main()
-        print("Sleeping for 30 minutes...\n")
-        time.sleep(1800)  # 1800 seconds = 30 minutes
+        print("Sleeping for 60 minutes...\n")
+        time.sleep(1800)  # 3600 seconds = 60 minutes
