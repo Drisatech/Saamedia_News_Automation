@@ -88,6 +88,8 @@ def process_article(title, content, link, category=None, image_url=None):
         return False, f"Unexpected error: {str(e)}"
 
 # Assuming 'articles' is a list of dicts with article data
+articles = []  # TODO: Populate this list with actual article data, e.g., from a database or API
+
 for article in articles:
     process_article(
         title=article["title"],
