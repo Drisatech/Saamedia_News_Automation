@@ -77,7 +77,7 @@ def process_article(title, content, link, category=None, image_url=None):
 
         # Step 2: Logging or notification
         if success:
-            log_article(title, category, link, success)
+            log_article(title, link, status="published", DateTime=None)
             notify_whatsapp(f"✅ Posted: {title}")
         else:
             notify_whatsapp(f"❌ Failed: {title} | {message}")
@@ -86,15 +86,3 @@ def process_article(title, content, link, category=None, image_url=None):
 
     except Exception as e:
         return False, f"Unexpected error: {str(e)}"
-
-# Assuming 'articles' is a list of dicts with article data
-articles = []  # TODO: Populate this list with actual article data, e.g., from a database or API
-
-for article in articles:
-    process_article(
-        title=article["title"],
-        content=article["content"],  # This is now the full article text
-        link=article["link"],
-        category=article.get("category"),
-        image_url=article.get("image_url")
-    )
