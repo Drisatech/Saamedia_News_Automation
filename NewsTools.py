@@ -1,5 +1,11 @@
 import sqlite3
 import requests
+import logging
+import base64
+import mimetypes
+import datetime
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from config import (
     WORDPRESS_REST_URL,  # e.g., "https://saamedia.info/wp-json/wp/v2"
     WP_USERNAME,
@@ -8,55 +14,56 @@ from config import (
     WHATSAPP_API,
     DATABASE_FILE
 )
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-import logging
-import base64
-import mimetypes
-import datetime
 
-def get_category_id_by_name(category_name, WORDPRESS_REST_URL, auth):
-    # Get all categories and find the ID for the given name
-    resp = requests.get(f"{WORDPRESS_REST_URL}/categories?search={category_name}", auth=auth)
+# ---------- WORDPRESS PUBLISHING ---------- #
+
+def get_category_id_by_name(category_name, base_url, auth):
+    """Get or create a WordPress category by name and return its ID."""
+    resp = requests.get(f"{base_url}/categories?search={category_name}", auth=auth)
     if resp.status_code == 200 and resp.json():
         return resp.json()[0]['id']
-    # If not found, create the category
-    create_resp = requests.post(f"{WORDPRESS_REST_URL}/categories", json={"name": category_name}, auth=auth)
+    
+    # Create the category if not found
+    create_resp = requests.post(f"{base_url}/categories", json={"name": category_name}, auth=auth)
     if create_resp.status_code == 201:
         return create_resp.json()['id']
+    
     return None
 
+
 def publish_to_wordpress(title, content, image_url=None, category_name=None, tags=None):
+    """Publishes article to WordPress site with optional image and category."""
     auth = (WP_USERNAME, WP_APP_PASSWORD)
     posts_url = f"{WORDPRESS_REST_URL}/posts"
-
-    # Step 1: Upload the image and get its media ID
     featured_media_id = None
-    if image_url:
-        img_data = requests.get(image_url).content
-        filename = image_url.split("/")[-1]
-        mime_type, _ = mimetypes.guess_type(filename)
-        if not mime_type:
-            mime_type = "image/jpeg"
-        media_headers = {
-            "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Type": mime_type
-        }
-        media_resp = requests.post(
-            f"{WORDPRESS_REST_URL}/media",
-            headers=media_headers,
-            data=img_data,
-            auth=auth,
-        )
-        if media_resp.status_code == 201:
-            featured_media_id = media_resp.json().get("id")
 
-    # Step 2: Get category ID from name
+    # Upload image if present
+    if image_url:
+        try:
+            img_data = requests.get(image_url).content
+            filename = image_url.split("/")[-1]
+            mime_type, _ = mimetypes.guess_type(filename) or ("image/jpeg", None)
+            media_headers = {
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Type": mime_type
+            }
+            media_resp = requests.post(
+                f"{WORDPRESS_REST_URL}/media",
+                headers=media_headers,
+                data=img_data,
+                auth=auth,
+            )
+            if media_resp.status_code == 201:
+                featured_media_id = media_resp.json().get("id")
+        except Exception as e:
+            logging.warning(f"❌ Failed to upload image: {e}")
+
+    # Get category ID
     category_id = None
     if category_name:
         category_id = get_category_id_by_name(category_name, WORDPRESS_REST_URL, auth)
 
-    # Step 3: Publish the post with full content and featured image
+    # Prepare post data
     post_data = {
         "title": title,
         "content": content,
@@ -72,6 +79,7 @@ def publish_to_wordpress(title, content, image_url=None, category_name=None, tag
     resp = requests.post(posts_url, json=post_data, auth=auth)
     return resp
 
+# ---------- LOGGING TO DATABASE ---------- #
 
 def log_article(title, category, url, status):
     """Logs published article into SQLite database."""
@@ -96,6 +104,7 @@ def log_article(title, category, url, status):
     except Exception as e:
         print(f"❌ Logging error: {e}")
 
+# ---------- WHATSAPP ALERT ---------- #
 
 def notify_whatsapp(message):
     """Sends WhatsApp alert using CallMeBot."""
@@ -109,8 +118,7 @@ def notify_whatsapp(message):
     except Exception as e:
         print(f"❌ WhatsApp alert error: {e}")
 
-
-# scrape_latest_articles
+# ---------- LOGGING CONFIG ---------- #
 
 logging.basicConfig(
     filename="newstools.log",
@@ -118,65 +126,82 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-def scrape_latest_articles(source, max_articles=5):
-    articles = []
-    visited_links = set()
+# ---------- SCRAPE LATEST ARTICLES ---------- #
+
+def scrape_latest_articles(max_articles=5):
+    sources = {
+        "https://www.channelstv.com": "div.post-item a",
+        "https://www.punchng.com": "h2.post-title a",
+        "https://tvcnews.tv": "h2.entry-title a",
+        "https://nairametrics.com": "h2.post-title a",
+        "https://dailytrust.com": "div.td-module-thumb a",
+        "https://businessday.ng": "h3.entry-title a",
+        "https://www.arise.tv": "h3 a",
+        "https://www.premiumtimesng.com": "h2.post-title a"
+    }
+
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
-    try:
-        resp = requests.get(source, headers=headers, timeout=10)
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        # Adjust selector for your news source
-        post_links = soup.find_all("h2", class_="post-title")
+
+    all_articles = []
+
+    for source, selector in sources.items():
+        visited_links = set()
         count = 0
+        try:
+            resp = requests.get(source, headers=headers, timeout=10)
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            post_links = soup.select(selector)
 
-        for post in post_links:
-            if count >= max_articles:
-                break
-            a_tag = post.find("a")
-            if not a_tag or not a_tag.get("href"):
-                continue
+            for a_tag in post_links:
+                if count >= max_articles:
+                    break
 
-            full_link = a_tag["href"]
-            if full_link in visited_links:
-                continue
+                href = a_tag.get("href")
+                if not href or href in visited_links:
+                    continue
 
-            visited_links.add(full_link)
-            title = a_tag.get_text(strip=True)
+                visited_links.add(href)
+                title = a_tag.get_text(strip=True)
 
-            # Fetch the article page and extract content and featured image
-            article_content = ""
-            image_url = None
-            try:
-                article_resp = requests.get(full_link, headers=headers, timeout=10)
-                article_soup = BeautifulSoup(article_resp.text, 'html.parser')
-                paragraphs = article_soup.find_all("p")
-                article_content = "\n".join(
-                    p.get_text() for p in paragraphs if len(p.get_text()) > 60
-                )
-                # Try to find a featured image
-                img_tag = article_soup.find("img")
-                if img_tag and img_tag.get("src"):
-                    image_url = img_tag["src"]
-                    if image_url.startswith("/"):
-                        image_url = urljoin(source, image_url)
-            except Exception as e:
-                logging.warning(f"❌ Failed to fetch article content from {full_link}: {e}")
+                # Fetch article page
+                article_content = ""
+                image_url = None
+                try:
+                    article_resp = requests.get(href, headers=headers, timeout=10)
+                    article_soup = BeautifulSoup(article_resp.text, 'html.parser')
+                    paragraphs = article_soup.find_all("p")
+                    article_content = "\n".join(
+                        p.get_text() for p in paragraphs if len(p.get_text()) > 60
+                    )
 
-            if title and full_link and article_content:
-                articles.append({
-                    "title": title,
-                    "content": article_content,
-                    "category": "Channelstv",
-                    "source": source,
-                    "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    "image_url": image_url,
-                    "link": full_link
-                })
-                count += 1
+                    # Try featured image
+                    img_tag = article_soup.find("img")
+                    if img_tag and img_tag.get("src"):
+                        image_url = img_tag["src"]
+                        if image_url.startswith("/"):
+                            image_url = urljoin(source, image_url)
+                except Exception as e:
+                    logging.warning(f"❌ Failed to fetch article from {href}: {e}")
+                    continue
 
-    except Exception as e:
-        logging.error(f"Error scraping articles from {source}: {e}")
+                if title and article_content:
+                    all_articles.append({
+                        "title": title,
+                        "content": article_content,
+                        "category": source.split("//")[1].split(".")[0].capitalize(),
+                        "source": source,
+                        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "image_url": image_url,
+                        "link": href
+                    })
+                    count += 1
 
-    return articles
+            logging.info(f"✅ Scraped {count} articles from {source}")
+
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"❌ Failed to scrape {source}: {e}")
+            continue
+
+    return all_articles
