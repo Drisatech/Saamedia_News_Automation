@@ -13,7 +13,6 @@ from urllib.parse import urljoin
 import logging
 import base64
 import mimetypes
-import datetime
 
 def get_category_id_by_name(category_name, WORDPRESS_REST_URL, auth):
     # Get all categories and find the ID for the given name
@@ -118,56 +117,65 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-def scrape_latest_articles(source, max_articles=5):
+def scrape_latest_articles():
+    sources = {
+        "https://www.channelstv.com": "div.post-item a",
+        "https://www.punchng.com": "h2.post-title a",
+        "https://tvcnews.tv": "h2.entry-title a",
+        "https://nairametrics.com": "h2.post-title a",
+        "https://dailytrust.com": "div.td-module-thumb a",
+        "https://businessday.ng": "h3.entry-title a",
+        "https://www.arise.tv": "h3 a",
+        "https://www.premiumtimesng.com": "h2.post-title a"
+    }
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/115.0.0.0 Safari/537.36"
+        )
+    }
+
     articles = []
     visited_links = set()
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-    try:
-        resp = requests.get(source, headers=headers, timeout=10)
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        links = soup.find_all("a")
-        count = 0
 
-        for link_tag in links:
-            if count >= max_articles:
-                break
-            href = link_tag.get("href")
-            if not href:
-                continue
+    for source, selector in sources.items():
+        try:
+            response = requests.get(source, headers=headers, timeout=10)
+            response.raise_for_status()
 
-            full_link = urljoin(source, href)
-            if full_link in visited_links:
-                continue
+            soup = BeautifulSoup(response.text, 'html.parser')
+            links = soup.select(selector)
 
-            visited_links.add(full_link)
-            title = link_tag.get_text(strip=True)
+            count = 0
+            for link_tag in links:
+                href = link_tag.get("href")
+                if not href:
+                    continue
 
-            # Fetch the article page and extract content
-            article_content = ""
-            try:
-                article_resp = requests.get(full_link, headers=headers, timeout=10)
-                article_soup = BeautifulSoup(article_resp.text, 'html.parser')
-                paragraphs = article_soup.find_all("p")
-                article_content = "\n".join(
-                    p.get_text() for p in paragraphs if len(p.get_text()) > 60
-                )
-            except Exception as e:
-                logging.warning(f"❌ Failed to fetch article content from {full_link}: {e}")
+                full_link = urljoin(source, href)
+                if full_link in visited_links:
+                    continue
 
-            if title and full_link and article_content:
-                articles.append({
-                    "title": title,
-                    "link": full_link,
-                    "content": article_content,  # Use the real content
-                    "category": source.replace("https://", "").replace("www.", "").split(".")[0].capitalize(),
-                    "source": source,
-                    "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-                })
-                count += 1
+                visited_links.add(full_link)
+                title = link_tag.get_text(strip=True)
 
-    except Exception as e:
-        logging.error(f"Error scraping articles from {source}: {e}")
+                if title and full_link:
+                    articles.append({
+                        "title": title,
+                        "link": full_link,
+                        "content": f"Full content to be fetched from {full_link}"  # Placeholder
+                    })
+                    count += 1
+
+                if count >= 5:
+                    break
+
+            logging.info(f"✅ Scraped {count} articles from {source}")
+
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"❌ Failed to scrape {source}: {e}")
+            continue
 
     return articles
