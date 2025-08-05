@@ -128,7 +128,7 @@ logging.basicConfig(
 
 # ---------- SCRAPE LATEST ARTICLES ---------- #
 
-def scrape_latest_articles(max_articles=5):
+def scrape_latest_articles(max_articles=10):
     sources = {
         "https://www.channelstv.com/category/politics/": "h3 a",
         "https://punchng.com/topics/news": "h3 a",
@@ -205,4 +205,5 @@ def scrape_latest_articles(max_articles=5):
             continue
 
     return all_articles
+
 
