@@ -130,14 +130,14 @@ logging.basicConfig(
 
 def scrape_latest_articles(max_articles=5):
     sources = {
-        "https://www.channelstv.com": "div.post-item a",
-        "https://www.punchng.com": "h2.post-title a",
-        "https://tvcnews.tv": "h2.entry-title a",
-        "https://nairametrics.com": "h2.post-title a",
-        "https://dailytrust.com": "div.td-module-thumb a",
-        "https://businessday.ng": "h3.entry-title a",
-        "https://www.arise.tv": "h3 a",
-        "https://www.premiumtimesng.com": "h2.post-title a"
+        "https://www.channelstv.com/category/politics/": "h3 a",
+        "https://punchng.com/topics/news": "h3 a",
+        "https://www.channelstv.com/category/business": "h3 a",
+        "https://nairametrics.com/category/nigeria-business-news": "h3 a",
+        "https://www.arise.tv/category/breaking": "h3 a",
+        "https://www.arise.tv/category/politics": "h3 a",
+        "https://www.arise.tv/category/global": "h3 a",
+        "https://www.arise.tv/category/africa": "h3 a"
     }
 
     headers = {
@@ -205,3 +205,4 @@ def scrape_latest_articles(max_articles=5):
             continue
 
     return all_articles
+
