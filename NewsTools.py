@@ -131,13 +131,8 @@ logging.basicConfig(
 def scrape_latest_articles(max_articles=5):
     sources = {
         "https://www.channelstv.com/category/politics/": "h3 a",
-        "https://punchng.com/topics/news": "h3 a",
-        "https://www.channelstv.com/category/business": "h3 a",
         "https://nairametrics.com/category/nigeria-business-news": "h3 a",
-        "https://www.arise.tv/category/breaking": "h3 a",
-        "https://www.arise.tv/category/politics": "h3 a",
         "https://www.arise.tv/category/global": "h3 a",
-        "https://www.arise.tv/category/africa": "h3 a"
     }
 
     headers = {
@@ -205,6 +200,7 @@ def scrape_latest_articles(max_articles=5):
             continue
 
     return all_articles
+
 
 
 
