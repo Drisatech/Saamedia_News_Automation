@@ -11,8 +11,8 @@ WP_USERNAME = "SAAMEDIA.INFO"
 WP_APP_PASSWORD = "WP_APP_PASSWORD"
 
 # 📞 WhatsApp Alert Config via CallMeBot
-WHATSAPP_API = "https://api.callmebot.com/whatsapp.php?phone=2348121044557&text=This+is+a+test&apikey=2254657"
-WHATSAPP_PHONE = "+2348121044557"
+WHATSAPP_API = "https://api.callmebot.com/whatsapp.php?phone=2348060466910&text=This+is+a+test&apikey=6321397"
+WHATSAPP_PHONE = "+2348060466910"
 ENABLE_WHATSAPP_ALERTS = True # or False
 
 # 📁 News Categories
