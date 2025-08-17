@@ -84,7 +84,7 @@ def process_article(title, content, link, category=None, image_url=None):
         # Step 2: Logging or notification
         if success:
             log_article(title, category, link, success)
-            # WhatsApp notification includes title and destination link
+            # WhatsApp notification includes title and actual post URL
             notify_whatsapp(f"✅ Posted: {title}\n🔗 {message}")
         else:
             notify_whatsapp(f"❌ Failed: {title} | {message}")

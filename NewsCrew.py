@@ -54,8 +54,9 @@ def run_news_pipeline():
 
             if success:
                 log_article(title, category, link, success)
-                if ENABLE_WHATSAPP_ALERTS:
-                    notify_whatsapp(f"✅ Posted: {title}\n🔗 {message}")
+                # REMOVE this line to avoid duplicate WhatsApp notifications
+                # if ENABLE_WHATSAPP_ALERTS:
+                #     notify_whatsapp(f"✅ Posted: {title}\n🔗 {message}")
                 logging.info(f"✅ Article published: {title}")
 
                 # Append processed article (for dashboard or scheduler)

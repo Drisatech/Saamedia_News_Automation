@@ -37,26 +37,29 @@ def publish_to_wordpress(title, content, image_url=None, category_name=None, tag
     posts_url = f"{WORDPRESS_REST_URL}/posts"
     featured_media_id = None
 
-    # Upload image if present
-    if image_url:
-        try:
-            img_data = requests.get(image_url).content
-            filename = image_url.split("/")[-1]
-            mime_type, _ = mimetypes.guess_type(filename) or ("image/jpeg", None)
-            media_headers = {
-                "Content-Disposition": f"attachment; filename={filename}",
-                "Content-Type": mime_type
-            }
-            media_resp = requests.post(
-                f"{WORDPRESS_REST_URL}/media",
-                headers=media_headers,
-                data=img_data,
-                auth=auth,
-            )
-            if media_resp.status_code == 201:
-                featured_media_id = media_resp.json().get("id")
-        except Exception as e:
-            logging.warning(f"❌ Failed to upload image: {e}")
+    # Use logo if no image_url provided
+    if not image_url:
+        image_url = "https://saamedia.info/wp-content/uploads/2024/02/SAAMEDIA-Logo-2.jpg"
+
+    # Upload image
+    try:
+        img_data = requests.get(image_url).content
+        filename = image_url.split("/")[-1]
+        mime_type, _ = mimetypes.guess_type(filename) or ("image/jpeg", None)
+        media_headers = {
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": mime_type
+        }
+        media_resp = requests.post(
+            f"{WORDPRESS_REST_URL}/media",
+            headers=media_headers,
+            data=img_data,
+            auth=auth,
+        )
+        if media_resp.status_code == 201:
+            featured_media_id = media_resp.json().get("id")
+    except Exception as e:
+        logging.warning(f"❌ Failed to upload image: {e}")
 
     # Get category ID
     category_id = None
@@ -182,6 +185,10 @@ def scrape_latest_articles(max_articles=5):
                     continue
 
                 if title and article_content:
+                    # Add acknowledgement credit at the bottom
+                    credit_line = f"\n\n---\n*Source: [{source}]({source})*"
+                    article_content += credit_line
+
                     all_articles.append({
                         "title": title,
                         "content": article_content,
