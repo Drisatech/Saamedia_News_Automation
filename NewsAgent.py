@@ -54,7 +54,7 @@ def post_to_wordpress(title, content, category, image_url=None):
         }
 
         response = requests.post(
-            "https://saamedia.info/wp-json/saamedia/v1/post-news",
+            "https://saamedia.com.ng/wp-json/saamedia/v1/post-news",
             json=post_payload,
             timeout=10
         )
@@ -65,7 +65,7 @@ def post_to_wordpress(title, content, category, image_url=None):
                 wp_response = response.json()
                 post_url = wp_response.get("link") or wp_response.get("url") or "https://saamedia.info"
             except Exception:
-                post_url = "https://saamedia.info"
+                post_url = "https://saamedia.com.ng"
             return True, post_url
         else:
             return False, f"WordPress API Error: {response.text}"
