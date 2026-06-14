@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: saamedia-news-automation
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn api_server:app
+    pythonVersion: 3.11
