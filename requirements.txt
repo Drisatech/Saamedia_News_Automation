@@ -12,3 +12,4 @@ requests
 schedule
 Jinja2
 tiktoken==0.8.0
+logging
