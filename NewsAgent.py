@@ -3,11 +3,10 @@
 import os
 import traceback
 import requests
-from NewsTasks import get_categorize_task, get_summarize_task
+from NewsTasks import get_categorize_task
 from NewsTools import log_article, notify_whatsapp
 from config import OPENAI_API_KEY
 from dotenv import load_dotenv
-from crewai import Crew, Agent, Task
 from litellm import completion
 
 # Configuration
@@ -35,14 +34,6 @@ categorizer_agent = Agent(
     verbose=True
 )
 
-summarizer_agent = Agent(
-    role="News Summarizer",
-    goal="Generate short summaries of news articles.",
-    backstory="A seasoned writer known for condensing complex stories into quick reads.",
-    tools=[],
-    verbose=True
-)
-
 # POST TO WORDPRESS FUNCTION
 def post_to_wordpress(title, content, category, image_url=None):
     try:
@@ -63,7 +54,7 @@ def post_to_wordpress(title, content, category, image_url=None):
             # Try to get the new post URL from the response
             try:
                 wp_response = response.json()
-                post_url = wp_response.get("link") or wp_response.get("url") or "https://saamedia.info"
+                post_url = wp_response.get("link") or wp_response.get("url") or "https://saamedia.com.ng"
             except Exception:
                 post_url = "https://saamedia.com.ng"
             return True, post_url
