@@ -1,8 +1,7 @@
 # NewsCrew.py
 
 import logging
-from NewsTasks import get_categorize_task, get_summarize_task
-from NewsAgent import categorizer_agent, summarizer_agent, process_article
+from NewsAgent import categorizer_agent, process_article
 from NewsTools import (
     scrape_latest_articles,
     publish_to_wordpress,
@@ -19,10 +18,9 @@ logging.basicConfig(
 )
 
 # Prepare agents and tasks (optional, in case you use them elsewhere)
-agents = [categorizer_agent, summarizer_agent]
+agents = [categorizer_agent]
 tasks = [
-    get_categorize_task(categorizer_agent),
-    get_summarize_task(summarizer_agent)
+    get_categorize_task(categorizer_agent)
 ]
 
 def run_news_pipeline():
