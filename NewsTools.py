@@ -7,7 +7,7 @@ import datetime
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from config import (
-    WORDPRESS_REST_URL,  # e.g., "https://saamedia.info/wp-json/wp/v2"
+    WORDPRESS_REST_URL,  # e.g., "https://saamedia.com.ng/wp-json/wp/v2"
     WP_USERNAME,
     WP_APP_PASSWORD,
     WHATSAPP_PHONE,
@@ -39,7 +39,7 @@ def publish_to_wordpress(title, content, image_url=None, category_name=None, tag
 
     # Use logo if no image_url provided
     if not image_url:
-        image_url = "https://saamedia.info/wp-content/uploads/2024/02/SAAMEDIA-Logo-2.jpg"
+        image_url = "https://saamedia.com.ng/wp-content/uploads/2024/02/SAAMEDIA-Logo-2.jpg"
 
     # Upload image
     try:
