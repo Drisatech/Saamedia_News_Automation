@@ -10,12 +10,10 @@ python_wordpress_xmlrpc
 Requests
 litellm
 flask
-Jsonify
 schedule
 langchain
 langchain-community
 dotenv
-logging
 urljoin
 gunicorn
 tiktoken
