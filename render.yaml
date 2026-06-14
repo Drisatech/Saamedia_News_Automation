@@ -4,4 +4,3 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn api_server:app
-    pythonVersion: 3.11
