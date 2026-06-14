@@ -18,3 +18,4 @@ dotenv
 logging
 urljoin
 gunicorn
+tiktoken
